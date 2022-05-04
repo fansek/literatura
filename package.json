@@ -1,0 +1,8 @@
+{
+  "name": "path-topo-sort",
+  "version": "1.0.0",
+  "description": "File Path Topological Sort - useful for reading large codebases",
+  "main": "index.js",
+  "author": "František Grega",
+  "license": "MIT"
+}
