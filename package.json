@@ -4,5 +4,8 @@
   "description": "File Path Topological Sort - useful for reading large codebases",
   "main": "index.js",
   "author": "František Grega",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "graphlib": "^2.1.8"
+  }
 }
