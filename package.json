@@ -5,6 +5,11 @@
   "main": "index.js",
   "author": "František Grega",
   "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.34.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.2"
+  },
   "dependencies": {
     "graphlib": "^2.1.8"
   }
