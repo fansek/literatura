@@ -18,9 +18,6 @@ Install
 Run
 
 ```sh
-depcruise --init
-depcruise --config .dependency-cruiser.js -T json -x '/(node_modules|dist|lib)/' . > deps.json
+depcruise --ts-config tsconfig.json -T json -x '/(node_modules|dist|lib)/' . > deps.json
 cat deps.json | jq '.modules | [.[] | .source as $source | .dependencies | .[] | select(.coreModule or .couldNotResolve | not) | .resolved | {v: $source, w: .}] | sort' > deps-consolidated.json
 ```
-
-Note that `depcruise --init` is run in interactive mode.

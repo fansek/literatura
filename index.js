@@ -1,6 +1,63 @@
 const graphlib = require('graphlib');
+const process = require('process');
+const fs = require('fs');
 
-function pathTopoSort(graphObj) {
+const { log } = console;
+
+/**
+ * @typedef {{
+ *    subtrees: Map<string, Tree>;
+ *    edges: { v: string; w: string }[];
+ * }} Tree
+ */
+
+/** @type {() => Tree} */
+const newTree = () => ({
+  subtrees: new Map(),
+  edges: [],
+});
+
+/** @type {(tree: Tree, ident: number) => string} */
+const printTree = (tree, indent = 0) => {
+  const { subtrees, edges } = tree;
+  const graph = graphlib.json.read({
+    nodes: [...subtrees.keys()].map((node) => ({ v: node })),
+    edges,
+  });
+  const components = graphlib.alg
+    .components(graph)
+    .map((component) => graph.filterNodes(component.includes.bind(component)));
+  const sccsComponents = components.map(graphlib.alg.tarjan);
+  sccsComponents.forEach((sccs) => {
+    sccs.forEach((scc) => scc.sort());
+  });
+  sccsComponents.sort();
+  const indentation = ' '.repeat(indent);
+  const result = sccsComponents
+    .flatMap((sccs) => sccs
+      .flatMap((scc, sccIndex) => scc
+        .map((node, nodeIndex) => {
+          let sign;
+          if (sccIndex === 0) {
+            sign = '*';
+          } else if (nodeIndex === 0) {
+            sign = '-';
+          } else {
+            sign = '!';
+          }
+          const subtree = subtrees.get(node);
+          const subtreeStr = subtree == null || subtree.subtrees.size === 0
+            ? ''
+            : `\n${printTree(subtree, indent + 4)}`;
+          return (
+            `${indentation + sign} ${node}${subtreeStr}`
+          );
+        })))
+    .join('\n');
+  return result;
+};
+
+const pathTopoSort = (graphObj) => {
   const importedGraph = graphlib.json.read(graphObj);
   const tree = newTree();
   importedGraph
@@ -37,44 +94,30 @@ function pathTopoSort(graphObj) {
       });
     });
   return printTree(tree, 0);
-}
+};
 
-function newTree() {
-  return {
-    subtrees: new Map(),
-    edges: []
-  };
-}
+const main = () => {
+  // log(`root dir: ${process.argv[2] ?? '.'}`);
 
-function printTree(tree, indent = 0) {
-  const { subtrees, edges } = tree;
-  const graph = graphlib.json.read({
-    nodes: [...subtrees.keys()].map((node) => ({ v: node })),
-    edges
-  });
-  const components = graphlib.alg
-    .components(graph)
-    .map((component) => graph.filterNodes(component.includes.bind(component)));
-  const sccsComponents = components.map(graphlib.alg.tarjan);
-  sccsComponents.forEach((sccs) => {
-    sccs.forEach((scc) => scc.sort());
-  })
-  sccsComponents.sort();
-  const result = sccsComponents
-    .flatMap((sccs) => sccs
-      .flatMap((scc, sccIndex) => scc
-        .map((node, nodeIndex) => (
-          ' '.repeat(indent)
-          + (sccIndex === 0 ? '*' : nodeIndex === 0 ? '-' : '!')
-          + ' ' + node
-          + (
-            subtrees.get(node).subtrees.size > 0
-              ? '\n' + printTree(subtrees.get(node), indent + 4)
-              : ''
-          )
-        ))))
-    .join('\n');
-  return result;
-}
+  const jsonString = fs.readFileSync(process.stdin.fd, 'utf-8');
+  const parsedEdges = JSON.parse(jsonString);
+  const result = pathTopoSort(
+    // [
+    //   ['b', 'd'], ['b', 'd'], ['b', 'a'], ['a', 'b'], ['c', 'e']
+    //   ['a', 'b'], ['b', 'c'], ['c', 'd']
+    // ]
+    // {
+    //   nodes: [{ v: 'b' }, { v: 'd' }, { v: 'a' }, { v: 'c' }, { v: 'e' }],
+    //   edges: [
+    //     { v: 'b', w: 'd' },
+    //     { v: 'b', w: 'a' },
+    //     { v: 'a', w: 'b' },
+    //     { v: 'c', w: 'e' }
+    //   ]
+    // }
+    { edges: parsedEdges },
+  );
+  log(result);
+};
 
-module.exports = pathTopoSort;
+main();
