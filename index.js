@@ -104,26 +104,9 @@ const pathTopoSort = (graphObj) => {
 };
 
 const main = () => {
-  // log(`root dir: ${process.argv[2] ?? '.'}`);
-
   const jsonString = fs.readFileSync(0).toString();
   const parsedEdges = JSON.parse(jsonString);
-  const result = pathTopoSort(
-    // [
-    //   ['b', 'd'], ['b', 'd'], ['b', 'a'], ['a', 'b'], ['c', 'e']
-    //   ['a', 'b'], ['b', 'c'], ['c', 'd']
-    // ]
-    // {
-    //   nodes: [{ v: 'b' }, { v: 'd' }, { v: 'a' }, { v: 'c' }, { v: 'e' }],
-    //   edges: [
-    //     { v: 'b', w: 'd' },
-    //     { v: 'b', w: 'a' },
-    //     { v: 'a', w: 'b' },
-    //     { v: 'c', w: 'e' }
-    //   ]
-    // }
-    { nodes: [], edges: parsedEdges },
-  );
+  const result = pathTopoSort({ nodes: [], edges: parsedEdges });
   log(result);
 };
 
