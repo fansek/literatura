@@ -6,14 +6,14 @@ const { log } = console;
 /**
  * @typedef {{
  *    subtrees: Map<string, Tree>;
- *    edges: { v: string; w: string }[];
+ *    edges: Map<string, Set<string>>;
  * }} Tree
  */
 
 /** @type {() => Tree} */
 const newTree = () => ({
   subtrees: new Map(),
-  edges: [],
+  edges: new Map(),
 });
 
 /** @type {(tree: Tree, ident: number) => string} */
@@ -21,7 +21,7 @@ const printTree = (tree, indent = 0) => {
   const { subtrees, edges } = tree;
   const graph = graphlib.json.read({
     nodes: [...subtrees.keys()].map((node) => ({ v: node })),
-    edges,
+    edges: [...edges].flatMap(([v, ws]) => [...ws].map((w) => ({ v, w }))),
   });
   const components = graphlib.alg
     .components(graph)
@@ -87,7 +87,12 @@ const pathTopoSort = (graphObj) => {
         if (equal) {
           current = current.subtrees.get(name);
         } else {
-          current.edges.push({ v: name, w: w[index] });
+          const { edges } = current;
+          if (edges.has(name)) {
+            edges.get(name).add(w[index]);
+          } else {
+            edges.set(name, new Set([w[index]]));
+          }
         }
         return !equal;
       });
