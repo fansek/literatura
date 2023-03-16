@@ -48,44 +48,44 @@ const formGraph = (rawEdges) => {
 
 /**
  * @typedef {{
- *    subtrees: Map<string, DirTree>;
+ *    subnodes: Map<string, DirNode>;
  *    dependencies: Map<string, Set<string>>;
- * }} DirTree
+ * }} DirNode
  */
 
-/** @type {() => DirTree} */
-const newTree = () => ({
-  subtrees: new Map(),
+/** @type {() => DirNode} */
+const newDirNode = () => ({
+  subnodes: new Map(),
   dependencies: new Map(),
 });
 
-/** @type {(graph: Graph, sep?: '\\' | '/') => DirTree} */
-const formDirTree = (graphObj, pathSeparator = path.sep) => {
+/** @type {(graph: Graph, sep?: '\\' | '/') => DirNode} */
+const formDirNode = (graphObj, pathSeparator = path.sep) => {
   const { nodes, edges } = graphObj;
-  const tree = newTree();
+  const dirNode = newDirNode();
   nodes.forEach(({ v }) => {
-    let current = tree;
+    let current = dirNode;
     v
       .split(pathSeparator)
       .forEach((name) => {
-        const { subtrees } = current;
-        if (subtrees.has(name)) {
-          current = subtrees.get(name);
+        const { subnodes } = current;
+        if (subnodes.has(name)) {
+          current = subnodes.get(name);
         } else {
-          const next = newTree();
-          subtrees.set(name, next);
+          const next = newDirNode();
+          subnodes.set(name, next);
           current = next;
         }
       });
   });
   edges.forEach((edge) => {
-    let current = tree;
+    let current = dirNode;
     const v = edge.v.split(pathSeparator);
     const w = edge.w.split(pathSeparator);
     v.some((name, index) => {
       const equal = name === w[index];
       if (equal) {
-        current = current.subtrees.get(name);
+        current = current.subnodes.get(name);
       } else {
         const { dependencies } = current;
         if (dependencies.has(name)) {
@@ -97,15 +97,16 @@ const formDirTree = (graphObj, pathSeparator = path.sep) => {
       return !equal;
     });
   });
-  return tree;
+  return dirNode;
 };
 
-/** @type {(tree: DirTree, ident: number) => string} */
-const printDirTree = (tree, indent = 0) => {
-  const { subtrees, dependencies: edges } = tree;
+/** @type {(dirNode: DirNode, indentStep?: number, ident?: number) => string} */
+const printDirNode = (dirNode, indentStep = 4, currentIndent = 0) => {
+  const { subnodes, dependencies } = dirNode;
   const graph = graphlib.json.read({
-    nodes: [...subtrees.keys()].map((v) => ({ v })),
-    edges: [...edges].flatMap(([v, ws]) => [...ws].map((w) => ({ v, w }))),
+    nodes: [...subnodes.keys()].map((v) => ({ v })),
+    edges: [...dependencies]
+      .flatMap(([v, ws]) => [...ws].map((w) => ({ v, w }))),
   });
   const components = graphlib.alg
     .components(graph)
@@ -115,7 +116,7 @@ const printDirTree = (tree, indent = 0) => {
     sccs.forEach((scc) => scc.sort());
   });
   sccsOfComponents.sort();
-  const indentation = ' '.repeat(indent);
+  const indentSpaces = ' '.repeat(currentIndent);
   const result = sccsOfComponents
     .flatMap((sccs) => sccs
       .flatMap((scc, sccIndex) => {
@@ -130,13 +131,13 @@ const printDirTree = (tree, indent = 0) => {
             } else {
               sign = '^';
             }
-            const subtree = subtrees.get(node);
-            const subtreeStr = subtree == null || subtree.subtrees.size === 0
+            const subnode = subnodes.get(node);
+            const subnodeStr = subnode == null || subnode.subnodes.size === 0
               ? ''
-              : `\n${printDirTree(subtree, indent + 4)}`;
-            return (
-              `${indentation + sign} ${node}${subtreeStr}`
-            );
+              : `\n${
+                printDirNode(subnode, indentStep, currentIndent + indentStep)
+              }`;
+            return `${indentSpaces}${sign} ${node}${subnodeStr}`;
           });
       }))
     .join('\n');
@@ -146,9 +147,9 @@ const printDirTree = (tree, indent = 0) => {
 const main = () => {
   const jsonString = fs.readFileSync(0).toString();
   const graph = formGraph(JSON.parse(jsonString));
-  const tree = formDirTree(graph);
-  const treeStr = printDirTree(tree, 0);
-  log(treeStr);
+  const dirNode = formDirNode(graph);
+  const dirNodeStr = printDirNode(dirNode);
+  log(dirNodeStr);
 };
 
 main();
