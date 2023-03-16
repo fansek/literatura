@@ -1,5 +1,6 @@
 const graphlib = require('@dagrejs/graphlib');
 const fs = require('fs');
+const path = require('path');
 
 const { log } = console;
 
@@ -44,19 +45,19 @@ const formGraph = (rawEdges) => {
 
 /**
  * @typedef {{
- *    subtrees: Map<string, Tree>;
- *    edges: Map<string, Set<string>>;
- * }} Tree
+ *    subtrees: Map<string, DirTree>;
+ *    dependencies: Map<string, Set<string>>;
+ * }} DirTree
  */
 
-/** @type {() => Tree} */
+/** @type {() => DirTree} */
 const newTree = () => ({
   subtrees: new Map(),
-  edges: new Map(),
+  dependencies: new Map(),
 });
 
-/** @type {(graph: Graph) => Tree} */
-const formTree = (graphObj) => {
+/** @type {(graph: Graph, sep?: '\\' | '/') => DirTree} */
+const formDirTree = (graphObj, pathSeparator = path.sep) => {
   const importedGraph = graphlib.json.read(graphObj);
   const tree = newTree();
   importedGraph
@@ -64,7 +65,7 @@ const formTree = (graphObj) => {
     .forEach((node) => {
       let current = tree;
       node
-        .split('/')
+        .split(pathSeparator)
         .forEach((name) => {
           const { subtrees } = current;
           if (subtrees.has(name)) {
@@ -80,14 +81,14 @@ const formTree = (graphObj) => {
     .edges()
     .forEach((edge) => {
       let current = tree;
-      const v = edge.v.split('/');
-      const w = edge.w.split('/');
+      const v = edge.v.split(pathSeparator);
+      const w = edge.w.split(pathSeparator);
       v.some((name, index) => {
         const equal = name === w[index];
         if (equal) {
           current = current.subtrees.get(name);
         } else {
-          const { edges } = current;
+          const { dependencies: edges } = current;
           if (edges.has(name)) {
             edges.get(name).add(w[index]);
           } else {
@@ -100,9 +101,9 @@ const formTree = (graphObj) => {
   return tree;
 };
 
-/** @type {(tree: Tree, ident: number) => string} */
-const printTree = (tree, indent = 0) => {
-  const { subtrees, edges } = tree;
+/** @type {(tree: DirTree, ident: number) => string} */
+const printDirTree = (tree, indent = 0) => {
+  const { subtrees, dependencies: edges } = tree;
   const graph = graphlib.json.read({
     nodes: [...subtrees.keys()].map((v) => ({ v })),
     edges: [...edges].flatMap(([v, ws]) => [...ws].map((w) => ({ v, w }))),
@@ -133,7 +134,7 @@ const printTree = (tree, indent = 0) => {
             const subtree = subtrees.get(node);
             const subtreeStr = subtree == null || subtree.subtrees.size === 0
               ? ''
-              : `\n${printTree(subtree, indent + 4)}`;
+              : `\n${printDirTree(subtree, indent + 4)}`;
             return (
               `${indentation + sign} ${node}${subtreeStr}`
             );
@@ -146,8 +147,8 @@ const printTree = (tree, indent = 0) => {
 const main = () => {
   const jsonString = fs.readFileSync(0).toString();
   const graph = formGraph(JSON.parse(jsonString));
-  const tree = formTree(graph);
-  const treeStr = printTree(tree, 0);
+  const tree = formDirTree(graph);
+  const treeStr = printDirTree(tree, 0);
   log(treeStr);
 };
 
