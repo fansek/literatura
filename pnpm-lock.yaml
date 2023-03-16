@@ -1,13 +1,13 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@dagrejs/graphlib': ^2.1.12
   eslint: ^8.34.0
   eslint-config-airbnb-base: ^15.0.0
   eslint-plugin-import: ^2.25.2
-  graphlib: ^2.1.8
 
 dependencies:
-  graphlib: 2.1.8
+  '@dagrejs/graphlib': 2.1.12
 
 devDependencies:
   eslint: 8.35.0
@@ -15,6 +15,11 @@ devDependencies:
   eslint-plugin-import: 2.27.5_eslint@8.35.0
 
 packages:
+
+  /@dagrejs/graphlib/2.1.12:
+    resolution: {integrity: sha512-yHk2G7ZNzDEHhQTlYtbtEy5PqlIoioCxZUKcrlBgubMvrLmewXqSV3v4rhc8RAt5s8lr8PcWbiovEPuORxe2KA==}
+    engines: {node: '>17.0.0'}
+    dev: false
 
   /@eslint/eslintrc/2.0.0:
     resolution: {integrity: sha512-fluIaaV+GyV24CCu/ggiHdV+j4RNh85yQnAYS/G2mZODZgGmmlrgCydjUcV3YvxCm9x8nMAfThsqTni4KiXT4A==}
@@ -660,12 +665,6 @@ packages:
     resolution: {integrity: sha512-bzh50DW9kTPM00T8y4o8vQg89Di9oLJVLW/KaOGIXJWP/iqCN6WKYkbNOF04vFLJhwcpYUh9ydh/+5vpOqV4YQ==}
     dev: true
 
-  /graphlib/2.1.8:
-    resolution: {integrity: sha512-jcLLfkpoVGmH7/InMC/1hIvOPSUh38oJtGhvrOFGzioE1DZ+0YW16RgmOJhHiuWTvGiJQ9Z1Ik43JvkRPRvE+A==}
-    dependencies:
-      lodash: 4.17.21
-    dev: false
-
   /has-bigints/1.0.2:
     resolution: {integrity: sha512-tSvCKtBr9lkF0Ex0aQiP9N+OpV4zi2r/Nee5VkRDbaqv35RLYMzbwQfFSZZH0kR+Rd6302UJZ2p/bJCEoR3VoQ==}
     dev: true
@@ -905,10 +904,6 @@ packages:
   /lodash.merge/4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
     dev: true
-
-  /lodash/4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
-    dev: false
 
   /minimatch/3.1.2:
     resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}

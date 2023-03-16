@@ -1,4 +1,4 @@
-const graphlib = require('graphlib');
+const graphlib = require('@dagrejs/graphlib');
 const process = require('process');
 const fs = require('fs');
 

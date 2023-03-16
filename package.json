@@ -11,6 +11,6 @@
     "eslint-plugin-import": "^2.25.2"
   },
   "dependencies": {
-    "graphlib": "^2.1.8"
+    "@dagrejs/graphlib": "^2.1.12"
   }
 }
