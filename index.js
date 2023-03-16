@@ -58,46 +58,42 @@ const newTree = () => ({
 
 /** @type {(graph: Graph, sep?: '\\' | '/') => DirTree} */
 const formDirTree = (graphObj, pathSeparator = path.sep) => {
-  const importedGraph = graphlib.json.read(graphObj);
+  const { nodes, edges } = graphObj;
   const tree = newTree();
-  importedGraph
-    .nodes()
-    .forEach((node) => {
-      let current = tree;
-      node
-        .split(pathSeparator)
-        .forEach((name) => {
-          const { subtrees } = current;
-          if (subtrees.has(name)) {
-            current = subtrees.get(name);
-          } else {
-            const next = newTree();
-            subtrees.set(name, next);
-            current = next;
-          }
-        });
-    });
-  importedGraph
-    .edges()
-    .forEach((edge) => {
-      let current = tree;
-      const v = edge.v.split(pathSeparator);
-      const w = edge.w.split(pathSeparator);
-      v.some((name, index) => {
-        const equal = name === w[index];
-        if (equal) {
-          current = current.subtrees.get(name);
+  nodes.forEach(({ v }) => {
+    let current = tree;
+    v
+      .split(pathSeparator)
+      .forEach((name) => {
+        const { subtrees } = current;
+        if (subtrees.has(name)) {
+          current = subtrees.get(name);
         } else {
-          const { dependencies: edges } = current;
-          if (edges.has(name)) {
-            edges.get(name).add(w[index]);
-          } else {
-            edges.set(name, new Set([w[index]]));
-          }
+          const next = newTree();
+          subtrees.set(name, next);
+          current = next;
         }
-        return !equal;
       });
+  });
+  edges.forEach((edge) => {
+    let current = tree;
+    const v = edge.v.split(pathSeparator);
+    const w = edge.w.split(pathSeparator);
+    v.some((name, index) => {
+      const equal = name === w[index];
+      if (equal) {
+        current = current.subtrees.get(name);
+      } else {
+        const { dependencies } = current;
+        if (dependencies.has(name)) {
+          dependencies.get(name).add(w[index]);
+        } else {
+          dependencies.set(name, new Set([w[index]]));
+        }
+      }
+      return !equal;
     });
+  });
   return tree;
 };
 
