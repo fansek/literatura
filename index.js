@@ -55,6 +55,51 @@ const newTree = () => ({
   edges: new Map(),
 });
 
+/** @type {(graph: Graph) => Tree} */
+const formTree = (graphObj) => {
+  const importedGraph = graphlib.json.read(graphObj);
+  const tree = newTree();
+  importedGraph
+    .nodes()
+    .forEach((node) => {
+      let current = tree;
+      node
+        .split('/')
+        .forEach((name) => {
+          const { subtrees } = current;
+          if (subtrees.has(name)) {
+            current = subtrees.get(name);
+          } else {
+            const next = newTree();
+            subtrees.set(name, next);
+            current = next;
+          }
+        });
+    });
+  importedGraph
+    .edges()
+    .forEach((edge) => {
+      let current = tree;
+      const v = edge.v.split('/');
+      const w = edge.w.split('/');
+      v.some((name, index) => {
+        const equal = name === w[index];
+        if (equal) {
+          current = current.subtrees.get(name);
+        } else {
+          const { edges } = current;
+          if (edges.has(name)) {
+            edges.get(name).add(w[index]);
+          } else {
+            edges.set(name, new Set([w[index]]));
+          }
+        }
+        return !equal;
+      });
+    });
+  return tree;
+};
+
 /** @type {(tree: Tree, ident: number) => string} */
 const printTree = (tree, indent = 0) => {
   const { subtrees, edges } = tree;
@@ -98,55 +143,12 @@ const printTree = (tree, indent = 0) => {
   return result;
 };
 
-const pathTopoSort = (graphObj) => {
-  const importedGraph = graphlib.json.read(graphObj);
-  const tree = newTree();
-  importedGraph
-    .nodes()
-    .forEach((node) => {
-      let current = tree;
-      node
-        .split('/')
-        .forEach((name) => {
-          const { subtrees } = current;
-          if (subtrees.has(name)) {
-            current = subtrees.get(name);
-          } else {
-            const next = newTree();
-            subtrees.set(name, next);
-            current = next;
-          }
-        });
-    });
-  importedGraph
-    .edges()
-    .forEach((edge) => {
-      let current = tree;
-      const v = edge.v.split('/');
-      const w = edge.w.split('/');
-      v.some((name, index) => {
-        const equal = name === w[index];
-        if (equal) {
-          current = current.subtrees.get(name);
-        } else {
-          const { edges } = current;
-          if (edges.has(name)) {
-            edges.get(name).add(w[index]);
-          } else {
-            edges.set(name, new Set([w[index]]));
-          }
-        }
-        return !equal;
-      });
-    });
-  return printTree(tree, 0);
-};
-
 const main = () => {
   const jsonString = fs.readFileSync(0).toString();
   const graph = formGraph(JSON.parse(jsonString));
-  const result = pathTopoSort(graph);
-  log(result);
+  const tree = formTree(graph);
+  const treeStr = printTree(tree, 0);
+  log(treeStr);
 };
 
 main();
