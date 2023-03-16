@@ -13,29 +13,32 @@ const { log } = console;
  * }} Graph
  */
 
-/** @type {(edge: unknown) => Edge} */
-const formEdge = (edge) => {
+/** @type {(rawEdge: unknown) => Edge} */
+const formEdge = (rawEdge) => {
   if (
-    edge == null || typeof edge !== 'object' || !('v' in edge) || !('w' in edge)
+    rawEdge == null
+    || typeof rawEdge !== 'object'
+    || !('v' in rawEdge)
+    || !('w' in rawEdge)
   ) {
     throw new Error('Unknown type of provided edge.');
   }
-  const { v, w } = edge;
+  const { v, w } = rawEdge;
   return { v: String(v), w: String(w) };
 };
 
-/** @type {(edges: unknown) => Edge[]} */
-const formEdges = (edges) => {
-  if (edges == null) {
+/** @type {(rawEdges: unknown) => Edge[]} */
+const formEdges = (rawEdges) => {
+  if (rawEdges == null) {
     return [];
   }
-  if (!Array.isArray(edges)) {
+  if (!Array.isArray(rawEdges)) {
     throw new Error('Unknown type of provided edges.');
   }
-  return edges.map(formEdge);
+  return rawEdges.map(formEdge);
 };
 
-/** @type {(edges: unknown) => Graph} */
+/** @type {(rawEdges: unknown) => Graph} */
 const formGraph = (rawEdges) => {
   const edges = formEdges(rawEdges);
   const nodes = [...new Set(edges.flatMap(({ v, w }) => [v, w]))]
