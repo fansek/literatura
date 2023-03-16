@@ -3,6 +3,28 @@ const fs = require('fs');
 
 const { log } = console;
 
+/** @type {(edge: unknown) => { v: string; w: string }} */
+const getEdge = (edge) => {
+  if (
+    edge == null || typeof edge !== 'object' || !('v' in edge) || !('w' in edge)
+  ) {
+    throw new Error('Unknown type of provided edge.');
+  }
+  const { v, w } = edge;
+  return { v: String(v), w: String(w) };
+};
+
+/** @type {(edges: unknown) => { v: string; w: string }[]} */
+const getEdges = (edges) => {
+  if (edges == null) {
+    return [];
+  }
+  if (!Array.isArray(edges)) {
+    throw new Error('Unknown type of provided edges.');
+  }
+  return edges.map(getEdge);
+};
+
 /**
  * @typedef {{
  *    subtrees: Map<string, Tree>;
@@ -105,8 +127,8 @@ const pathTopoSort = (graphObj) => {
 
 const main = () => {
   const jsonString = fs.readFileSync(0).toString();
-  const parsedEdges = JSON.parse(jsonString);
-  const result = pathTopoSort({ nodes: [], edges: parsedEdges });
+  const edges = getEdges(JSON.parse(jsonString));
+  const result = pathTopoSort({ nodes: [], edges });
   log(result);
 };
 
