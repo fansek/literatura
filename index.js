@@ -1,5 +1,4 @@
 const graphlib = require('@dagrejs/graphlib');
-const process = require('process');
 const fs = require('fs');
 
 const { log } = console;
@@ -99,7 +98,7 @@ const pathTopoSort = (graphObj) => {
 const main = () => {
   // log(`root dir: ${process.argv[2] ?? '.'}`);
 
-  const jsonString = fs.readFileSync(process.stdin.fd, 'utf-8');
+  const jsonString = fs.readFileSync(0).toString();
   const parsedEdges = JSON.parse(jsonString);
   const result = pathTopoSort(
     // [
