@@ -26,32 +26,35 @@ const printTree = (tree, indent = 0) => {
   const components = graphlib.alg
     .components(graph)
     .map((component) => graph.filterNodes(component.includes.bind(component)));
-  const sccsComponents = components.map(graphlib.alg.tarjan);
-  sccsComponents.forEach((sccs) => {
+  const sccsOfComponents = components.map(graphlib.alg.tarjan);
+  sccsOfComponents.forEach((sccs) => {
     sccs.forEach((scc) => scc.sort());
   });
-  sccsComponents.sort();
+  sccsOfComponents.sort();
   const indentation = ' '.repeat(indent);
-  const result = sccsComponents
+  const result = sccsOfComponents
     .flatMap((sccs) => sccs
-      .flatMap((scc, sccIndex) => scc
-        .map((node, nodeIndex) => {
-          let sign;
-          if (sccIndex === 0) {
-            sign = '*';
-          } else if (nodeIndex === 0) {
-            sign = '-';
-          } else {
-            sign = '!';
-          }
-          const subtree = subtrees.get(node);
-          const subtreeStr = subtree == null || subtree.subtrees.size === 0
-            ? ''
-            : `\n${printTree(subtree, indent + 4)}`;
-          return (
-            `${indentation + sign} ${node}${subtreeStr}`
-          );
-        })))
+      .flatMap((scc, sccIndex) => {
+        const sccContainsCycle = scc.length > 1;
+        return scc
+          .map((node) => {
+            let sign;
+            if (sccContainsCycle) {
+              sign = '!';
+            } else if (sccIndex === 0) {
+              sign = '*';
+            } else {
+              sign = '^';
+            }
+            const subtree = subtrees.get(node);
+            const subtreeStr = subtree == null || subtree.subtrees.size === 0
+              ? ''
+              : `\n${printTree(subtree, indent + 4)}`;
+            return (
+              `${indentation + sign} ${node}${subtreeStr}`
+            );
+          });
+      }))
     .join('\n');
   return result;
 };
@@ -119,7 +122,7 @@ const main = () => {
     //     { v: 'c', w: 'e' }
     //   ]
     // }
-    { edges: parsedEdges },
+    { nodes: [], edges: parsedEdges },
   );
   log(result);
 };
