@@ -3,8 +3,17 @@ const fs = require('fs');
 
 const { log } = console;
 
-/** @type {(edge: unknown) => { v: string; w: string }} */
-const getEdge = (edge) => {
+/**
+ * @typedef {{ v: string }} Node
+ * @typedef {{ v: string; w: string }} Edge
+ * @typedef {{
+ *    nodes: Node[];
+ *    edges: Edge[];
+ * }} Graph
+ */
+
+/** @type {(edge: unknown) => Edge} */
+const formEdge = (edge) => {
   if (
     edge == null || typeof edge !== 'object' || !('v' in edge) || !('w' in edge)
   ) {
@@ -14,15 +23,23 @@ const getEdge = (edge) => {
   return { v: String(v), w: String(w) };
 };
 
-/** @type {(edges: unknown) => { v: string; w: string }[]} */
-const getEdges = (edges) => {
+/** @type {(edges: unknown) => Edge[]} */
+const formEdges = (edges) => {
   if (edges == null) {
     return [];
   }
   if (!Array.isArray(edges)) {
     throw new Error('Unknown type of provided edges.');
   }
-  return edges.map(getEdge);
+  return edges.map(formEdge);
+};
+
+/** @type {(edges: unknown) => Graph} */
+const formGraph = (rawEdges) => {
+  const edges = formEdges(rawEdges);
+  const nodes = [...new Set(edges.flatMap(({ v, w }) => [v, w]))]
+    .map((v) => ({ v }));
+  return { nodes, edges };
 };
 
 /**
@@ -42,7 +59,7 @@ const newTree = () => ({
 const printTree = (tree, indent = 0) => {
   const { subtrees, edges } = tree;
   const graph = graphlib.json.read({
-    nodes: [...subtrees.keys()].map((node) => ({ v: node })),
+    nodes: [...subtrees.keys()].map((v) => ({ v })),
     edges: [...edges].flatMap(([v, ws]) => [...ws].map((w) => ({ v, w }))),
   });
   const components = graphlib.alg
@@ -127,8 +144,8 @@ const pathTopoSort = (graphObj) => {
 
 const main = () => {
   const jsonString = fs.readFileSync(0).toString();
-  const edges = getEdges(JSON.parse(jsonString));
-  const result = pathTopoSort({ nodes: [], edges });
+  const graph = formGraph(JSON.parse(jsonString));
+  const result = pathTopoSort(graph);
   log(result);
 };
 
