@@ -15,7 +15,9 @@ Install
 - [dependency-cruiser](https://www.npmjs.com/package/dependency-cruiser)
 - [jq](https://stedolan.github.io/jq/manual/)
 
-Run
+Run `depcruise --info` to see if required extensions are allowed.
+
+To find dependencies, run:
 
 ```sh
 depcruise --ts-config tsconfig.json -T json -x '/(node_modules|dist|lib)/' . > deps.json
