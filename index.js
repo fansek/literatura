@@ -100,6 +100,34 @@ const formDirNode = (graphObj, pathSeparator = path.sep) => {
   return dirNode;
 };
 
+/** @type {(dirNode: DirNode) => graphlib.Graph} */
+const graphDependencies = (dirNode) => {
+  const { subnodes, dependencies } = dirNode;
+  return graphlib.json.read({
+    nodes: [...subnodes.keys()].map((v) => ({ v })),
+    edges: [...dependencies]
+      .flatMap(([v, ws]) => [...ws].map((w) => ({ v, w }))),
+  });
+};
+
+/** @type {(graph: graphlib.Graph) => string[][][]} */
+const getSortedSccsByComponent = (graph) => {
+  const components = graphlib.alg
+    .components(graph)
+    .map((component) => graph.filterNodes(component.includes.bind(component)));
+  const sccsByComponent = components.map(graphlib.alg.tarjan);
+  sccsByComponent.forEach((sccs) => {
+    sccs.forEach((scc) => scc.sort());
+  });
+  sccsByComponent.sort();
+  return sccsByComponent;
+};
+
+const sccsStart = 0b1000;
+const sccsEnd = 0b0100;
+const sccStart = 0b0010;
+const sccEnd = 0b0001;
+
 const maskSymbols = {
   0b1111: '╶',
   0b1011: '┌',
@@ -126,53 +154,66 @@ const maskContinuationSymbols = {
   0b00: '┃',
 };
 
+/**
+@type {
+  (sccIndex: number, lastSccIndex: number) =>
+  (nodeIndex: number, lastNodeIndex: number) =>
+  { symbol: string; continuationSymbol: string }
+}
+*/
+const symbolsBySccIndex = (sccIndex, lastSccIndex) => {
+  const sccIndexContinuationMask = (
+    sccsEnd * Number(sccIndex === lastSccIndex)
+  );
+  const sccIndexMask = (
+    sccsStart * Number(sccIndex === 0) + sccIndexContinuationMask
+  );
+  /**
+  @type {
+    (nodeIndex: number, lastNodeIndex: number) =>
+    { symbol: string; continuationSymbol: string }
+  }
+  */
+  const symbolsByNodeIndex = (nodeIndex, lastNodeIndex) => {
+    const nodeIndexContinuationMask = (
+      sccEnd * Number(nodeIndex === lastNodeIndex)
+    );
+    const nodeIndexMask = (
+      sccStart * Number(nodeIndex === 0) + nodeIndexContinuationMask
+    );
+    const mask = sccIndexMask + nodeIndexMask;
+    const symbol = maskSymbols[mask];
+    const continuationMask = (
+      Number(sccIndexContinuationMask === sccsEnd) * 0b10
+      + Number(nodeIndexContinuationMask === sccEnd) * 0b1
+    );
+    const continuationSymbol = maskContinuationSymbols[continuationMask];
+    return { symbol, continuationSymbol };
+  };
+  return symbolsByNodeIndex;
+};
+
 /** @type {(dirNode: DirNode, prefix?: string) => string} */
 const printDirNode = (dirNode, prefix = '') => {
-  const { subnodes, dependencies } = dirNode;
-  const graph = graphlib.json.read({
-    nodes: [...subnodes.keys()].map((v) => ({ v })),
-    edges: [...dependencies]
-      .flatMap(([v, ws]) => [...ws].map((w) => ({ v, w }))),
-  });
-  const components = graphlib.alg
-    .components(graph)
-    .map((component) => graph.filterNodes(component.includes.bind(component)));
-  const sccsByComponent = components.map(graphlib.alg.tarjan);
-  sccsByComponent.forEach((sccs) => {
-    sccs.forEach((scc) => scc.sort());
-  });
-  sccsByComponent.sort();
+  const { subnodes } = dirNode;
+  const graph = graphDependencies(dirNode);
+  const sccsByComponent = getSortedSccsByComponent(graph);
   const result = sccsByComponent
     .flatMap((sccs) => sccs
       .flatMap((scc, sccIndex) => {
-        const sccIndexMask = (
-          0b1000 * Number(sccIndex === 0)
-          + 0b0100 * Number(sccIndex === sccs.length - 1)
-        );
+        const symbolsByNodeIndex = symbolsBySccIndex(sccIndex, sccs.length - 1);
         return scc
           .map((node, nodeIndex) => {
-            const nodeIndexMask = (
-              0b0010 * Number(nodeIndex === 0)
-              + 0b0001 * Number(nodeIndex === scc.length - 1)
+            const { symbol, continuationSymbol } = (
+              symbolsByNodeIndex(nodeIndex, scc.length - 1)
             );
-            const mask = sccIndexMask + nodeIndexMask;
-            const sign = maskSymbols[mask] ?? mask;
-            const continuationMask = (
-              // eslint-disable-next-line no-bitwise
-              Number((sccIndexMask & 0b0100) === 0b0100) * 0b10
-              // eslint-disable-next-line no-bitwise
-              + Number((nodeIndexMask & 0b01) === 0b01) * 0b01
-            );
-            const continuationSign = maskContinuationSymbols[
-              continuationMask
-            ] ?? continuationMask;
             const subnode = subnodes.get(node);
             const subnodeStr = subnode == null || subnode.subnodes.size === 0
               ? ''
               : `\n${
-                printDirNode(subnode, `${prefix}${continuationSign}   `)
+                printDirNode(subnode, `${prefix}${continuationSymbol}   `)
               }`;
-            return `${prefix}${sign} ${node}${subnodeStr}`;
+            return `${prefix}${symbol} ${node}${subnodeStr}`;
           });
       }))
     .join('\n');
