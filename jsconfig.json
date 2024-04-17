@@ -1,11 +1,6 @@
 {
+  "extends": "@tsconfig/node16/tsconfig.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "target": "ESNext",
-    "checkJs": true,
-    "strictNullChecks": false,
-  },
-  "exclude": [
-    "node_modules",
-  ]
+    "checkJs": true
+  }
 }
