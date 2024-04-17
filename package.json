@@ -3,15 +3,23 @@
   "version": "1.0.0",
   "description": "File Path Topological Sort - useful for reading large codebases",
   "main": "index.js",
+  "type": "module",
   "author": "František Grega",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^8.34.0",
+    "@tsconfig/node16": "^16.1.1",
+    "@types/d3-array": "^3.2.1",
+    "eslint": "^8.57.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.25.2"
+    "eslint-plugin-import": "^2.29.1"
   },
   "dependencies": {
-    "@dagrejs/graphlib": "^2.1.12",
-    "commander": "^11.0.0"
+    "@dagrejs/graphlib": "^2.1.13",
+    "commander": "^11.1.0",
+    "d3-array": "^3.2.4",
+    "dpdm": "^3.14.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
