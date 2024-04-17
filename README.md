@@ -1,25 +1,12 @@
-# File Path Topological Sort
+# literatura
 
-File Path Topological Sort - useful for reading large codebases.
+Literatura - useful tool for reading large codebases.
 
-## Examples Of Usage
+## Running
 
-First, you need to create file path dependencies and then you can run file path
-topological sort on them.
+Run `literatura **/*` to scan project for dependencies and build result markdown
+document.
 
-To create file path dependencies for a javascript project, you may try following
-steps:
+## Acknowledgements
 
-Install
-
-- [dependency-cruiser](https://www.npmjs.com/package/dependency-cruiser)
-- [jq](https://stedolan.github.io/jq/manual/)
-
-Run `depcruise --info` to see if required extensions are allowed.
-
-To find dependencies, run:
-
-```sh
-depcruise --ts-config tsconfig.json -T json -x '/(node_modules|dist|lib)/' . > deps.json
-cat deps.json | jq '.modules | [.[] | .source as $source | .dependencies | .[] | select(.coreModule or .couldNotResolve | not) | .resolved | {v: $source, w: .}] | sort' > deps-consolidated.json
-```
+literatura uses `dpdm` for dependency list retrieval.

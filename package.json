@@ -1,8 +1,9 @@
 {
-  "name": "path-topo-sort",
+  "name": "literatura",
   "version": "1.0.0",
-  "description": "File Path Topological Sort - useful for reading large codebases",
-  "main": "index.js",
+  "description": "Literatura - useful tool for reading large codebases",
+  "main": "literatura.js",
+  "bin": "./literatura.js",
   "type": "module",
   "author": "František Grega",
   "license": "MIT",
@@ -17,7 +18,8 @@
     "@dagrejs/graphlib": "^2.1.13",
     "commander": "^11.1.0",
     "d3-array": "^3.2.4",
-    "dpdm": "^3.14.0"
+    "dpdm": "^3.14.0",
+    "escape-html": "^1.0.3"
   },
   "engines": {
     "node": ">=16.0.0"

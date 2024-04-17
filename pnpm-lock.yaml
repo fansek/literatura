@@ -17,6 +17,9 @@ dependencies:
   dpdm:
     specifier: ^3.14.0
     version: 3.14.0
+  escape-html:
+    specifier: ^1.0.3
+    version: 1.0.3
 
 devDependencies:
   '@tsconfig/node16':
@@ -590,6 +593,10 @@ packages:
   /escalade@3.1.2:
     resolution: {integrity: sha512-ErCHMCae19vR8vQGe50xIsVomy19rg6gFu3+r3jkEO46suLMWBksvVyoGgQV+jOfl84ZSOSlmv6Gxa89PmTGmA==}
     engines: {node: '>=6'}
+    dev: false
+
+  /escape-html@1.0.3:
+    resolution: {integrity: sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow==}
     dev: false
 
   /escape-string-regexp@4.0.0:
