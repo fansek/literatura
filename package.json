@@ -19,7 +19,8 @@
     "commander": "^11.1.0",
     "d3-array": "^3.2.4",
     "dpdm": "^3.14.0",
-    "escape-html": "^1.0.3"
+    "mdast-util-to-markdown": "^2.1.0",
+    "unist-builder": "^4.0.0"
   },
   "engines": {
     "node": ">=16.0.0"

@@ -4,7 +4,8 @@ import { createRequire } from 'node:module';
 import * as path from 'node:path';
 import * as commander from 'commander';
 import { parseDependencyTree } from 'dpdm';
-import escapeHTML from 'escape-html';
+import { toMarkdown } from 'mdast-util-to-markdown';
+import { u } from 'unist-builder';
 import { formDirNode, getSortedSccsByComponent } from './dir-node.js';
 
 const require = createRequire(import.meta.url);
@@ -37,114 +38,148 @@ const findHighestNonTrivialDescendant = (dirNode) => {
 
 /**
  * @param {string} value
- * @returns {string}
+ * @returns {import('mdast').Link}
  */
-const link = (value) => `<a>${escapeHTML(value)}</a>`;
+const link = (value) => u('link', { url: '' }, [u('text', value)]);
 
 /**
  * @param {string[][]} sccs
  * @param {Dependencies} dependencies
  * @param {string} depsRoot
- * @returns {string}
+ * @returns {import('mdast').List}
  */
-const sccsToString = (sccs, dependencies, depsRoot) => {
-  /** @type {(edge: [string, string]) => string} */
-  const edgeToString = ([tail, head]) => {
-    const relativeTail = link(path.relative(depsRoot, tail));
-    const relativeHead = link(path.relative(depsRoot, head));
-    return `    - ${relativeTail} → ${relativeHead}`;
-  };
+const sccsToMdast = (sccs, dependencies, depsRoot) => {
+  /** @type {(edge: [string, string]) => import('mdast').ListItem} */
+  const edgeToMdast = ([tail, head]) => u('listItem', [
+    u('paragraph', [
+      link(path.relative(depsRoot, tail)),
+      u('text', ' → '),
+      link(path.relative(depsRoot, head)),
+    ]),
+  ]);
   const cyclicDeps = new Set(sccs.flatMap(
     (scc) => (scc.length > 1 ? scc : []),
   ));
-  /** @type {(value: string) => string} */
-  const decoratedLink = (value) => (
-    cyclicDeps.has(value)
-      ? `*${link(value)}* (!)`
-      : link(value)
+  /** @type {(value: string, arrow?: boolean) => import('mdast').Paragraph} */
+  const decoratedLink = (value, arrow) => {
+    const prefix = arrow ? [u('text', '↘ ')] : [];
+    const mainElements = cyclicDeps.has(value)
+      ? [u('emphasis', [link(value)]), u('text', ' (!)')]
+      : [link(value)];
+    return u('paragraph', [...prefix, ...mainElements]);
+  };
+  return u(
+    'list',
+    { spread: false },
+    sccs
+      .flatMap((scc) => scc
+        .map((node) => {
+          const deps = dependencies.get(node);
+          return u(
+            'listItem',
+            { spread: false },
+            [
+              decoratedLink(node),
+              ...(deps == null || deps.size === 0
+                ? []
+                : [
+                  u(
+                    'list',
+                    { spread: false },
+                    [...deps]
+                      .map(
+                        ([other, files]) => {
+                          if (files.length === 1) {
+                            const [tail, head] = files[0];
+                            if (
+                              node === path.relative(depsRoot, tail)
+                            && other === path.relative(depsRoot, head)
+                            ) {
+                              return u(
+                                'listItem',
+                                { spread: false },
+                                [decoratedLink(other, true)],
+                              );
+                            }
+                          }
+                          return u(
+                            'listItem',
+                            { spread: false },
+                            [
+                              decoratedLink(other, true),
+                              u(
+                                'list',
+                                { spread: false },
+                                files.map(edgeToMdast),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                  ),
+                ]),
+            ],
+          );
+        })),
   );
-
-  return sccs
-    .map((scc) => scc
-      .map((node) => {
-        const nodeStr = `- ${decoratedLink(node)}`;
-        const deps = dependencies.get(node);
-        const depsStr = deps == null
-          ? ''
-          : `\n${[...deps]
-            .map(
-              ([other, files]) => {
-                if (files.length === 1) {
-                  const [tail, head] = files[0];
-                  if (
-                    node === path.relative(depsRoot, tail)
-                      && other === path.relative(depsRoot, head)
-                  ) {
-                    return `  - ↘ ${decoratedLink(other)}`;
-                  }
-                }
-                return (
-                  `  - ↘ ${decoratedLink(other)}\n${
-                    [...files].map(edgeToString).join('\n')
-                  }`
-                );
-              },
-            )
-            .join('\n')}`;
-        return `${nodeStr}${depsStr}`;
-      })
-      .join('\n'))
-    .join('\n');
 };
 
 /**
  * @param {string[][][]} sccsByComponent
  * @param {Dependencies} dependencies
  * @param {string} depsRoot
- * @returns {string}
+ * @returns {import('mdast').RootContent[]}
  */
-const sccsByComponentToString = (
+const sccsByComponentToMdast = (
   sccsByComponent,
   dependencies,
   depsRoot,
 ) => sccsByComponent
-  .map((sccs) => sccsToString(sccs, dependencies, depsRoot))
-  .join('\n\n---\n\n');
+  .flatMap(
+    (sccs) => [sccsToMdast(sccs, dependencies, depsRoot), u('thematicBreak')],
+  )
+  .slice(0, -1);
 
 /**
  * @param {DirNode} dirNode
  * @param {string} depsRoot
- * @returns {string}
+ * @returns {import('mdast').RootContent[]}
  */
-const dirNodeToString = (dirNode, depsRoot) => {
+const dirNodeToMdast = (dirNode, depsRoot) => {
   const nonTrivial = findHighestNonTrivialDescendant(dirNode);
   // do not print anything for leaf nodes (modules, files)
   // or trivial nodes (with single descendant only)
   if (nonTrivial == null) {
-    return '';
+    return [];
   }
 
   const { dependencies, fullName, subnodes } = nonTrivial;
 
   const sccsByComponent = getSortedSccsByComponent(nonTrivial);
 
-  const childrenStr = sccsByComponent
+  const dirNodeChildren = sccsByComponent
     .flat()
     .flat()
-    .map((name) => dirNodeToString(
+    .flatMap((name) => dirNodeToMdast(
       /** @type {DirNode} */ (subnodes.get(name)),
       depsRoot,
-    ))
-    .filter(Boolean)
-    .join('\n\n');
+    ));
 
-  const dirNodeStr = `${childrenStr && '\n\n'}# ${
-    link(path.relative(depsRoot, fullName)) || '.'
-  }\n\n${
-    sccsByComponentToString(sccsByComponent, dependencies, nonTrivial.fullName)
-  }`;
-
-  return childrenStr + dirNodeStr;
+  const dirNodeHeading = u(
+    'heading',
+    { depth: /** @type {1} */ (1) },
+    [link(path.relative(depsRoot, fullName) || '.')],
+  );
+  const dirNodeContent = sccsByComponentToMdast(
+    sccsByComponent,
+    dependencies,
+    nonTrivial.fullName,
+  );
+  return [
+    ...dirNodeChildren,
+    dirNodeHeading,
+    ...dirNodeContent,
+  ];
 };
 
 /**
@@ -172,7 +207,9 @@ const printDeps = async (entries) => {
     throw new Error(`No deps root was found: ${dirNode}`);
   }
 
-  console.log(dirNodeToString(depsRoot, depsRoot.fullName));
+  const resultMdast = u('root', dirNodeToMdast(depsRoot, depsRoot.fullName));
+  // console.log(JSON.stringify(resultMdast, undefined, 2));
+  console.log(toMarkdown(resultMdast));
 };
 
 const { program } = commander;
@@ -182,7 +219,10 @@ program
     'CLI to build topologically ordered literature from code '
     + 'with respect for code directory structure.',
   )
-  .argument('<entries...>', 'entries for dependency tree traversal (see manual for dpdm)');
+  .argument(
+    '<entries...>',
+    'entries for dependency tree traversal (see manual for dpdm)',
+  );
 
 program.parse();
 
