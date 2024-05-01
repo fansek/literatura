@@ -3,12 +3,6 @@ import graphlib from '@dagrejs/graphlib';
 import * as d3 from 'd3-array';
 
 /**
- * @typedef {{ v: string }} Node
- * @typedef {{ v: string; w: string }} Edge
- * @typedef {{
- *    nodes: Node[];
- *    edges: Edge[];
- * }} Graph
  * @typedef {{
  *    name: string;
  *    fullName: string;
