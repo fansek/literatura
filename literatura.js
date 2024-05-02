@@ -33,27 +33,29 @@ const findHighestNonTrivialDescendant = (dirNode) => {
 };
 
 /**
- * @param {string} value
+ * @param {string} url
+ * @param {string} [title]
  * @returns {import('mdast').Link}
  */
-const link = (value) => u('link', { url: '' }, [u('text', value)]);
+const link = (url, title = url) => u('link', { url }, [u('text', title)]);
 
 /**
  * @param {string[][]} sccs
  * @param {Dependencies} dependencies
- * @param {string} depsRoot
+ * @param {string} contextPath
+ * @param {string} rootPath
  * @returns {import('mdast').List}
  */
-const sccsToMdast = (sccs, dependencies, depsRoot) => {
+const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
   /**
    * @param {Edge} edge
    * @returns {import('mdast').ListItem}
    */
   const edgeToMdast = ({ tail, head }) => u('listItem', [
     u('paragraph', [
-      link(path.relative(depsRoot, tail)),
+      link(path.relative(rootPath, tail), path.relative(contextPath, tail)),
       u('text', ' → '),
-      link(path.relative(depsRoot, head)),
+      link(path.relative(rootPath, head), path.relative(contextPath, head)),
     ]),
   ]);
   const cyclicDeps = new Set(sccs.flatMap(
@@ -61,95 +63,86 @@ const sccsToMdast = (sccs, dependencies, depsRoot) => {
   ));
 
   /**
-   * @param {string} value
+   * @param {string} nodeName
    * @param {boolean} [arrow]
    * @returns {import('mdast').Paragraph}
    */
-  const decoratedLink = (value, arrow) => {
+  const decoratedLink = (nodeName, arrow) => {
     const prefix = arrow ? [u('text', '↘ ')] : [];
-    const mainElements = cyclicDeps.has(value)
-      ? [u('emphasis', [link(value)]), u('text', ' (!)')]
-      : [link(value)];
-    return u('paragraph', [...prefix, ...mainElements]);
+    const l = link(
+      path.relative(rootPath, path.join(contextPath, nodeName)),
+      nodeName,
+    );
+    const maybeEmphasised = cyclicDeps.has(nodeName)
+      ? [u('emphasis', [l]), u('text', ' (!)')]
+      : [l];
+    return u('paragraph', [...prefix, ...maybeEmphasised]);
   };
-  return u(
-    'list',
-    { spread: false },
-    sccs
-      .flatMap((scc) => scc
-        .map((node) => {
-          const deps = dependencies.get(node);
-          return u(
-            'listItem',
-            { spread: false },
-            [
-              decoratedLink(node),
-              ...(deps == null || deps.size === 0
-                ? []
-                : [
-                  u(
-                    'list',
-                    { spread: false },
-                    [...deps]
-                      .map(
-                        ([other, files]) => {
-                          if (files.length === 1) {
-                            const { tail, head } = files[0];
-                            if (
-                              node === path.relative(depsRoot, tail)
-                            && other === path.relative(depsRoot, head)
-                            ) {
-                              return u(
-                                'listItem',
-                                { spread: false },
-                                [decoratedLink(other, true)],
-                              );
-                            }
-                          }
-                          return u(
-                            'listItem',
-                            { spread: false },
-                            [
-                              decoratedLink(other, true),
-                              u(
-                                'list',
-                                { spread: false },
-                                files.map(edgeToMdast),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                  ),
-                ]),
-            ],
-          );
-        })),
-  );
+
+  const tailMdasts = sccs
+    .flatMap((scc) => scc
+      .map((nodeName) => {
+        const deps = dependencies.get(nodeName);
+        const maybeTailListMdast = deps == null || deps.size === 0
+          ? []
+          : [
+            u(
+              'list',
+              { spread: false },
+              [...deps]
+                .map(
+                  ([other, files]) => {
+                    const maybeEdgeListMdast = (
+                      files.length === 1
+                      && nodeName === path.relative(contextPath, files[0].tail)
+                      && other === path.relative(contextPath, files[0].head)
+                    ) ? []
+                      : [u('list', { spread: false }, files.map(edgeToMdast))];
+                    return u(
+                      'listItem',
+                      { spread: false },
+                      [decoratedLink(other, true), ...maybeEdgeListMdast],
+                    );
+                  },
+                ),
+            ),
+          ];
+        return u(
+          'listItem',
+          { spread: false },
+          [decoratedLink(nodeName), ...maybeTailListMdast],
+        );
+      }));
+  return u('list', { spread: false }, tailMdasts);
 };
 
 /**
  * @param {string[][][]} sccsByComponent
  * @param {Dependencies} dependencies
- * @param {string} depsRoot
+ * @param {string} contextPath
+ * @param {string} rootPath
  * @returns {import('mdast').RootContent[]}
  */
 const sccsByComponentToMdast = (
   sccsByComponent,
   dependencies,
-  depsRoot,
+  contextPath,
+  rootPath,
 ) => sccsByComponent
   .flatMap(
-    (sccs) => [sccsToMdast(sccs, dependencies, depsRoot), u('thematicBreak')],
+    (sccs) => [
+      sccsToMdast(sccs, dependencies, contextPath, rootPath),
+      u('thematicBreak'),
+    ],
   )
   .slice(0, -1);
 
 /**
  * @param {DirNode} dirNode
- * @param {string} depsRoot
+ * @param {string} rootPath
  * @returns {import('mdast').RootContent[]}
  */
-const dirNodeToMdast = (dirNode, depsRoot) => {
+const dirNodeToMdast = (dirNode, rootPath) => {
   const nonTrivial = findHighestNonTrivialDescendant(dirNode);
   // do not print anything for leaf nodes (modules, files)
   // or trivial nodes (with single descendant only)
@@ -166,18 +159,19 @@ const dirNodeToMdast = (dirNode, depsRoot) => {
     .flat()
     .flatMap((name) => dirNodeToMdast(
       /** @type {DirNode} */ (subnodes.get(name)),
-      depsRoot,
+      rootPath,
     ));
 
   const dirNodeHeading = u(
     'heading',
     { depth: /** @type {1} */ (1) },
-    [link(path.relative(depsRoot, fullName) || '.')],
+    [link(path.relative(rootPath, fullName) || '.')],
   );
   const dirNodeContent = sccsByComponentToMdast(
     cs,
     dependencies,
     nonTrivial.fullName,
+    rootPath,
   );
   return [
     ...dirNodeChildren,
@@ -203,12 +197,12 @@ const printDeps = async (entries) => {
         .map((id) => ({ tail: path.resolve(from), head: path.resolve(id) })),
     );
   const dirNode = formDirNode(edges);
-  const depsRoot = findHighestNonTrivialDescendant(dirNode);
-  if (depsRoot === undefined) {
+  const rootNode = findHighestNonTrivialDescendant(dirNode);
+  if (rootNode === undefined) {
     throw new Error(`No deps root was found: ${dirNode}`);
   }
 
-  const resultMdast = u('root', dirNodeToMdast(depsRoot, depsRoot.fullName));
+  const resultMdast = u('root', dirNodeToMdast(rootNode, rootNode.fullName));
   // console.log(JSON.stringify(resultMdast, undefined, 2));
   console.log(toMarkdown(resultMdast));
 };
