@@ -11,10 +11,15 @@ import { sort } from 'd3-array';
  */
 const convertToGraph = (dirNode) => {
   const { subnodes, dependencies } = dirNode;
+  // sorting has influence on the final topological ordering when breaking ties
   return graphlib.json.read({
-    nodes: Array.from(subnodes.keys(), (v) => ({ v })),
-    edges: [...dependencies]
-      .flatMap(([v, ws]) => Array.from(ws.keys(), (w) => ({ v, w }))),
+    nodes: sort(subnodes.keys()).map((v) => ({ v })),
+    edges: (
+      sort(dependencies, ([v]) => v)
+        .flatMap(
+          ([v, ws]) => sort(ws.keys()).map((w) => ({ v, w })),
+        )
+    ),
   });
 };
 
@@ -30,25 +35,9 @@ const componentizeGraph = (graph) => (
 );
 
 /**
- * @param {string[][][]} cs
- * @returns {string[][][]}
- */
-const sortComponents = (cs) => (
-  sort(
-    cs.map(
-      (sccs) => sccs.map(
-        (scc) => sort(scc),
-      ),
-    ),
-  )
-);
-
-/**
  * @param {DirNode} node
  * @returns {string[][][]}
  */
-const componentize = (node) => (
-  sortComponents(componentizeGraph(convertToGraph(node)))
-);
+const componentize = (node) => componentizeGraph(convertToGraph(node));
 
 export default componentize;

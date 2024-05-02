@@ -3,6 +3,7 @@
 import { createRequire } from 'node:module';
 import * as path from 'node:path';
 import * as commander from 'commander';
+import { sort } from 'd3-array';
 import { parseDependencyTree } from 'dpdm';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import { u } from 'unist-builder';
@@ -31,6 +32,21 @@ const findHighestNonTrivialDescendant = (dirNode) => {
   }
   return undefined;
 };
+
+/**
+ * @param {string[][][]} cs
+ * @returns {string[][][]}
+ */
+const sortComponents = (cs) => (
+  sort(
+    cs.map(
+      // sccs are ordered topologically
+      (sccs) => sccs.map(
+        (scc) => sort(scc),
+      ),
+    ),
+  )
+);
 
 /**
  * @param {string} url
@@ -79,29 +95,39 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
     return u('paragraph', [...prefix, ...maybeEmphasised]);
   };
 
-  const tailMdasts = sccs
+  const tailListItems = sccs
     .flatMap((scc) => scc
       .map((nodeName) => {
         const deps = dependencies.get(nodeName);
-        const maybeTailListMdast = deps == null || deps.size === 0
+        const maybeHeadList = deps == null || deps.size === 0
           ? []
           : [
             u(
               'list',
               { spread: false },
-              [...deps]
+              sort(deps, ([other]) => other)
                 .map(
-                  ([other, files]) => {
-                    const maybeEdgeListMdast = (
-                      files.length === 1
-                      && nodeName === path.relative(contextPath, files[0].tail)
-                      && other === path.relative(contextPath, files[0].head)
+                  ([other, edges]) => {
+                    const maybeEdgeList = (
+                      edges.length === 1
+                      && nodeName === path.relative(contextPath, edges[0].tail)
+                      && other === path.relative(contextPath, edges[0].head)
                     ) ? []
-                      : [u('list', { spread: false }, files.map(edgeToMdast))];
+                      : [
+                        u(
+                          'list',
+                          { spread: false },
+                          sort(
+                            edges,
+                            ({ tail }) => tail,
+                            ({ head }) => head,
+                          ).map(edgeToMdast),
+                        ),
+                      ];
                     return u(
                       'listItem',
                       { spread: false },
-                      [decoratedLink(other, true), ...maybeEdgeListMdast],
+                      [decoratedLink(other, true), ...maybeEdgeList],
                     );
                   },
                 ),
@@ -110,32 +136,29 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
         return u(
           'listItem',
           { spread: false },
-          [decoratedLink(nodeName), ...maybeTailListMdast],
+          [decoratedLink(nodeName), ...maybeHeadList],
         );
       }));
-  return u('list', { spread: false }, tailMdasts);
+  return u('list', { spread: false }, tailListItems);
 };
 
 /**
- * @param {string[][][]} sccsByComponent
+ * @param {string[][][]} cs
  * @param {Dependencies} dependencies
  * @param {string} contextPath
  * @param {string} rootPath
  * @returns {import('mdast').RootContent[]}
  */
-const sccsByComponentToMdast = (
-  sccsByComponent,
-  dependencies,
-  contextPath,
-  rootPath,
-) => sccsByComponent
-  .flatMap(
-    (sccs) => [
-      sccsToMdast(sccs, dependencies, contextPath, rootPath),
-      u('thematicBreak'),
-    ],
-  )
-  .slice(0, -1);
+const csToMdast = (cs, dependencies, contextPath, rootPath) => (
+  cs
+    .flatMap(
+      (sccs) => [
+        sccsToMdast(sccs, dependencies, contextPath, rootPath),
+        u('thematicBreak'),
+      ],
+    )
+    .slice(0, -1)
+);
 
 /**
  * @param {DirNode} dirNode
@@ -152,7 +175,7 @@ const dirNodeToMdast = (dirNode, rootPath) => {
 
   const { dependencies, fullName, subnodes } = nonTrivial;
 
-  const cs = componentize(nonTrivial);
+  const cs = sortComponents(componentize(nonTrivial));
 
   const dirNodeChildren = cs
     .flat()
@@ -167,7 +190,7 @@ const dirNodeToMdast = (dirNode, rootPath) => {
     { depth: /** @type {1} */ (1) },
     [link(path.relative(rootPath, fullName) || '.')],
   );
-  const dirNodeContent = sccsByComponentToMdast(
+  const dirNodeContent = csToMdast(
     cs,
     dependencies,
     nonTrivial.fullName,

@@ -1,5 +1,4 @@
 import * as path from 'node:path';
-import { sort } from 'd3-array';
 import setDefault from './set-default.js';
 
 /**
@@ -29,7 +28,7 @@ const newDirNode = (name, fullName) => ({
  * @returns {string[]}
  */
 const findNodes = (edges) => (
-  sort([...new Set(edges.flatMap(({ tail, head }) => [tail, head]))])
+  [...new Set(edges.flatMap(({ tail, head }) => [tail, head]))]
 );
 
 /**
@@ -38,8 +37,7 @@ const findNodes = (edges) => (
  * @returns {DirNode}
  */
 const formDirNode = (edges, pathSeparator = path.sep) => {
-  const sortedEdges = sort(edges, ({ tail }) => tail, ({ head }) => head);
-  const nodes = findNodes(sortedEdges);
+  const nodes = findNodes(edges);
   const dirNode = newDirNode('/', '/');
   nodes.forEach((node) => {
     let current = dirNode;
@@ -63,7 +61,7 @@ const formDirNode = (edges, pathSeparator = path.sep) => {
   /** @type {Map<string, Set<string>>} */
   const edgeSet = new Map();
 
-  sortedEdges.forEach(({ tail, head }) => {
+  edges.forEach(({ tail, head }) => {
     let current = dirNode;
     const tailNodes = tail.split(pathSeparator);
     const headNodes = head.split(pathSeparator);
