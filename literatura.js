@@ -6,21 +6,17 @@ import * as commander from 'commander';
 import { parseDependencyTree } from 'dpdm';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import { u } from 'unist-builder';
-import { formDirNode, getSortedSccsByComponent } from './dir-node.js';
+import formDirNode from './dir-node.js';
+import isNotNull from './is-not-null.js';
+import componentize from './componentize.js';
 
 const require = createRequire(import.meta.url);
 
 /**
  * @typedef {import('./dir-node.js').DirNode} DirNode
  * @typedef {DirNode['dependencies']} Dependencies
+ * @typedef {import('./dir-node.js').Edge} Edge
  */
-
-/**
- * @template T
- * @param {T | null} value
- * @returns {value is T & {}}
- */
-const isNotNull = (value) => value != null;
 
 /**
  * @param {DirNode} dirNode
@@ -49,8 +45,11 @@ const link = (value) => u('link', { url: '' }, [u('text', value)]);
  * @returns {import('mdast').List}
  */
 const sccsToMdast = (sccs, dependencies, depsRoot) => {
-  /** @type {(edge: [string, string]) => import('mdast').ListItem} */
-  const edgeToMdast = ([tail, head]) => u('listItem', [
+  /**
+   * @param {Edge} edge
+   * @returns {import('mdast').ListItem}
+   */
+  const edgeToMdast = ({ tail, head }) => u('listItem', [
     u('paragraph', [
       link(path.relative(depsRoot, tail)),
       u('text', ' → '),
@@ -60,7 +59,12 @@ const sccsToMdast = (sccs, dependencies, depsRoot) => {
   const cyclicDeps = new Set(sccs.flatMap(
     (scc) => (scc.length > 1 ? scc : []),
   ));
-  /** @type {(value: string, arrow?: boolean) => import('mdast').Paragraph} */
+
+  /**
+   * @param {string} value
+   * @param {boolean} [arrow]
+   * @returns {import('mdast').Paragraph}
+   */
   const decoratedLink = (value, arrow) => {
     const prefix = arrow ? [u('text', '↘ ')] : [];
     const mainElements = cyclicDeps.has(value)
@@ -90,7 +94,7 @@ const sccsToMdast = (sccs, dependencies, depsRoot) => {
                       .map(
                         ([other, files]) => {
                           if (files.length === 1) {
-                            const [tail, head] = files[0];
+                            const { tail, head } = files[0];
                             if (
                               node === path.relative(depsRoot, tail)
                             && other === path.relative(depsRoot, head)
@@ -155,9 +159,9 @@ const dirNodeToMdast = (dirNode, depsRoot) => {
 
   const { dependencies, fullName, subnodes } = nonTrivial;
 
-  const sccsByComponent = getSortedSccsByComponent(nonTrivial);
+  const cs = componentize(nonTrivial);
 
-  const dirNodeChildren = sccsByComponent
+  const dirNodeChildren = cs
     .flat()
     .flat()
     .flatMap((name) => dirNodeToMdast(
@@ -171,7 +175,7 @@ const dirNodeToMdast = (dirNode, depsRoot) => {
     [link(path.relative(depsRoot, fullName) || '.')],
   );
   const dirNodeContent = sccsByComponentToMdast(
-    sccsByComponent,
+    cs,
     dependencies,
     nonTrivial.fullName,
   );
@@ -196,10 +200,7 @@ const printDeps = async (entries) => {
         .filter(({ request }) => require.resolve.paths(request) != null)
         .map(({ id }) => id)
         .filter(isNotNull)
-        .map(
-          /** @type {(id: string) => [string, string]} */
-          (id) => [path.resolve(from), path.resolve(id)],
-        ),
+        .map((id) => ({ tail: path.resolve(from), head: path.resolve(id) })),
     );
   const dirNode = formDirNode(edges);
   const depsRoot = findHighestNonTrivialDescendant(dirNode);

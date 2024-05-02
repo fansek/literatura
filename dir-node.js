@@ -1,17 +1,22 @@
 import * as path from 'node:path';
-import graphlib from '@dagrejs/graphlib';
-import * as d3 from 'd3-array';
+import { sort } from 'd3-array';
+import setDefault from './set-default.js';
 
 /**
+ * @typedef {{ tail: string; head: string }} Edge
  * @typedef {{
  *    name: string;
  *    fullName: string;
  *    subnodes: Map<string, DirNode>;
- *    dependencies: Map<string, Map<string, [string, string][]>>;
+ *    dependencies: Map<string, Map<string, Edge[]>>;
  * }} DirNode
  */
 
-/** @type {(name: string, fullName: string) => DirNode} */
+/**
+ * @param {string} name
+ * @param {string} fullName
+ * @returns {DirNode}
+ */
 const newDirNode = (name, fullName) => ({
   name,
   fullName,
@@ -19,22 +24,21 @@ const newDirNode = (name, fullName) => ({
   dependencies: new Map(),
 });
 
-/** @type {<K, V>(map: Map<K, V & {}>, key: K, defaultsTo: V & {}) => V & {}} */
-const setDefault = (map, key, defaultsTo) => {
-  const value = map.get(key);
-  if (value != null) {
-    return value;
-  }
-  map.set(key, defaultsTo);
-  return defaultsTo;
-};
+/**
+ * @param {Edge[]} edges
+ * @returns {string[]}
+ */
+const findNodes = (edges) => (
+  sort([...new Set(edges.flatMap(({ tail, head }) => [tail, head]))])
+);
 
-/** @type {(edges: [string, string][]) => string[]} */
-const findNodes = (edges) => [...new Set(edges.flat())];
-
-/** @type {(edges: [string, string][], sep?: '\\' | '/') => DirNode} */
-export const formDirNode = (edges, pathSeparator = path.sep) => {
-  const sortedEdges = d3.sort(edges, (edge) => edge[0], (edge) => edge[1]);
+/**
+ * @param {Edge[]} edges
+ * @param {'\\' | '/'} [pathSeparator]
+ * @returns {DirNode}
+ */
+const formDirNode = (edges, pathSeparator = path.sep) => {
+  const sortedEdges = sort(edges, ({ tail }) => tail, ({ head }) => head);
   const nodes = findNodes(sortedEdges);
   const dirNode = newDirNode('/', '/');
   nodes.forEach((node) => {
@@ -59,53 +63,40 @@ export const formDirNode = (edges, pathSeparator = path.sep) => {
   /** @type {Map<string, Set<string>>} */
   const edgeSet = new Map();
 
-  sortedEdges.forEach(([tailStr, headStr]) => {
+  sortedEdges.forEach(({ tail, head }) => {
     let current = dirNode;
-    const tail = tailStr.split(pathSeparator);
-    const head = headStr.split(pathSeparator);
-    tail.some((name, index) => {
-      const equal = name === head[index];
-      if (equal) {
-        current = /** @type {DirNode} */ (current.subnodes.get(name));
+    const tailNodes = tail.split(pathSeparator);
+    const headNodes = head.split(pathSeparator);
+    tailNodes.some((tailNode, index) => {
+      const headNode = headNodes[index];
+      const nodesAreEqual = tailNode === headNode;
+      if (nodesAreEqual) {
+        current = /** @type {DirNode} */ (current.subnodes.get(tailNode));
       } else {
         const { dependencies } = current;
-        let heads = edgeSet.get(tailStr);
-        if (heads == null || !heads.has(headStr)) {
+        let heads = edgeSet.get(tail);
+        if (heads == null || !heads.has(head)) {
           if (heads == null) {
             heads = new Set();
-            edgeSet.set(tailStr, heads);
+            edgeSet.set(tail, heads);
           }
-          heads.add(headStr);
-          setDefault(setDefault(dependencies, name, new Map()), head[index], [])
-            .push([tailStr, headStr]);
+          heads.add(head);
+
+          setDefault(
+            setDefault(
+              dependencies,
+              tailNode,
+              /** @type {Map<string, Edge[]>} */ (new Map()),
+            ),
+            headNodes[index],
+            [],
+          ).push({ tail, head });
         }
       }
-      return !equal;
+      return !nodesAreEqual;
     });
   });
   return dirNode;
 };
 
-/** @type {(dirNode: DirNode) => graphlib.Graph} */
-const dirNodeToGraph = (dirNode) => {
-  const { subnodes, dependencies } = dirNode;
-  return graphlib.json.read({
-    nodes: Array.from(subnodes.keys(), (v) => ({ v })),
-    edges: [...dependencies]
-      .flatMap(([v, ws]) => Array.from(ws.keys(), (w) => ({ v, w }))),
-  });
-};
-
-/** @type {(dirNode: DirNode) => string[][][]} */
-export const getSortedSccsByComponent = (dirNode) => {
-  const graph = dirNodeToGraph(dirNode);
-  const components = graphlib.alg
-    .components(graph)
-    .map((component) => graph.filterNodes(component.includes.bind(component)));
-  const sccsByComponent = components.map(graphlib.alg.tarjan);
-  sccsByComponent.forEach((sccs) => {
-    sccs.forEach((scc) => scc.sort());
-  });
-  sccsByComponent.sort();
-  return sccsByComponent;
-};
+export default formDirNode;
