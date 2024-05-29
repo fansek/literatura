@@ -46,16 +46,14 @@ const formDirNode = (edges, pathSeparator = path.sep) => {
       .forEach((name, index, vArray) => {
         const { subnodes } = current;
         let next = subnodes.get(name);
-        if (next != null) {
-          current = next;
-        } else {
+        if (next == null) {
           next = newDirNode(
             name,
             vArray.slice(0, index + 1).join(pathSeparator),
           );
           subnodes.set(name, next);
-          current = next;
         }
+        current = next;
       });
   });
   /** @type {Map<string, Set<string>>} */

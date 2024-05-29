@@ -205,9 +205,10 @@ const dirNodeToMdast = (dirNode, rootPath) => {
 
 /**
  * @param {string[]} entries
+ * @param {string} workingDir
  * @returns {Promise<void>}
  */
-const printDeps = async (entries) => {
+const printDeps = async (entries, workingDir) => {
   const depTree = await parseDependencyTree(entries, {});
   const edges = Object
     .entries(depTree)
@@ -225,7 +226,7 @@ const printDeps = async (entries) => {
     throw new Error(`No deps root was found: ${dirNode}`);
   }
 
-  const resultMdast = u('root', dirNodeToMdast(rootNode, rootNode.fullName));
+  const resultMdast = u('root', dirNodeToMdast(rootNode, workingDir));
   // console.log(JSON.stringify(resultMdast, undefined, 2));
   console.log(toMarkdown(resultMdast));
 };
@@ -246,4 +247,6 @@ program.parse();
 
 const entries = program.args;
 
-printDeps(entries);
+const workingDir = process.cwd();
+
+printDeps(entries, workingDir);
