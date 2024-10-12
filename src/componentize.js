@@ -14,11 +14,8 @@ const convertToGraph = (dirNode) => {
   // sorting has influence on the final topological ordering when breaking ties
   return graphlib.json.read({
     nodes: sort(subnodes.keys()).map((v) => ({ v })),
-    edges: (
-      sort(dependencies, ([v]) => v)
-        .flatMap(
-          ([v, ws]) => sort(ws.keys()).map((w) => ({ v, w })),
-        )
+    edges: sort(dependencies, ([v]) => v).flatMap(([v, ws]) =>
+      sort(ws.keys()).map((w) => ({ v, w })),
     ),
   });
 };
@@ -27,12 +24,11 @@ const convertToGraph = (dirNode) => {
  * @param {graphlib.Graph} graph
  * @returns {string[][][]}
  */
-const componentizeGraph = (graph) => (
+const componentizeGraph = (graph) =>
   graphlib.alg
     .components(graph)
     .map((c) => graph.filterNodes(c.includes.bind(c)))
-    .map(graphlib.alg.tarjan)
-);
+    .map(graphlib.alg.tarjan);
 
 /**
  * @param {DirNode} node

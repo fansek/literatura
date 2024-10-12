@@ -1,14 +1,10 @@
-#!/usr/bin/env node
-
 import { createRequire } from 'node:module';
 import * as path from 'node:path';
-import * as commander from 'commander';
 import { sort } from 'd3-array';
 import { parseDependencyTree } from 'dpdm';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import { u } from 'unist-builder';
 import formDirNode from './dir-node.js';
-import isNotNull from './is-not-null.js';
 import componentize from './componentize.js';
 
 const require = createRequire(import.meta.url);
@@ -37,16 +33,13 @@ const findHighestNonTrivialDescendant = (dirNode) => {
  * @param {string[][][]} cs
  * @returns {string[][][]}
  */
-const sortComponents = (cs) => (
+const sortComponents = (cs) =>
   sort(
     cs.map(
       // sccs are ordered topologically
-      (sccs) => sccs.map(
-        (scc) => sort(scc),
-      ),
+      (sccs) => sccs.map((scc) => sort(scc)),
     ),
-  )
-);
+  );
 
 /**
  * @param {string} url
@@ -67,16 +60,17 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
    * @param {Edge} edge
    * @returns {import('mdast').ListItem}
    */
-  const edgeToMdast = ({ tail, head }) => u('listItem', [
-    u('paragraph', [
-      link(path.relative(rootPath, tail), path.relative(contextPath, tail)),
-      u('text', ' → '),
-      link(path.relative(rootPath, head), path.relative(contextPath, head)),
-    ]),
-  ]);
-  const cyclicDeps = new Set(sccs.flatMap(
-    (scc) => (scc.length > 1 ? scc : []),
-  ));
+  const edgeToMdast = ({ tail, head }) =>
+    u('listItem', [
+      u('paragraph', [
+        link(path.relative(rootPath, tail), path.relative(contextPath, tail)),
+        u('text', ' → '),
+        link(path.relative(rootPath, head), path.relative(contextPath, head)),
+      ]),
+    ]);
+  const cyclicDeps = new Set(
+    sccs.flatMap((scc) => (scc.length > 1 ? scc : [])),
+  );
 
   /**
    * @param {string} nodeName
@@ -95,50 +89,46 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
     return u('paragraph', [...prefix, ...maybeEmphasised]);
   };
 
-  const tailListItems = sccs
-    .flatMap((scc) => scc
-      .map((nodeName) => {
-        const deps = dependencies.get(nodeName);
-        const maybeHeadList = deps == null || deps.size === 0
+  const tailListItems = sccs.flatMap((scc) =>
+    scc.map((nodeName) => {
+      const deps = dependencies.get(nodeName);
+      const maybeHeadList =
+        deps == null || deps.size === 0
           ? []
           : [
-            u(
-              'list',
-              { spread: false },
-              sort(deps, ([other]) => other)
-                .map(
-                  ([other, edges]) => {
-                    const maybeEdgeList = (
-                      edges.length === 1
-                      && nodeName === path.relative(contextPath, edges[0].tail)
-                      && other === path.relative(contextPath, edges[0].head)
-                    ) ? []
+              u(
+                'list',
+                { spread: false },
+                sort(deps, ([other]) => other).map(([other, edges]) => {
+                  const maybeEdgeList =
+                    edges.length === 1 &&
+                    nodeName === path.relative(contextPath, edges[0].tail) &&
+                    other === path.relative(contextPath, edges[0].head)
+                      ? []
                       : [
-                        u(
-                          'list',
-                          { spread: false },
-                          sort(
-                            edges,
-                            ({ tail }) => tail,
-                            ({ head }) => head,
-                          ).map(edgeToMdast),
-                        ),
-                      ];
-                    return u(
-                      'listItem',
-                      { spread: false },
-                      [decoratedLink(other, true), ...maybeEdgeList],
-                    );
-                  },
-                ),
-            ),
-          ];
-        return u(
-          'listItem',
-          { spread: false },
-          [decoratedLink(nodeName), ...maybeHeadList],
-        );
-      }));
+                          u(
+                            'list',
+                            { spread: false },
+                            sort(
+                              edges,
+                              ({ tail }) => tail,
+                              ({ head }) => head,
+                            ).map(edgeToMdast),
+                          ),
+                        ];
+                  return u('listItem', { spread: false }, [
+                    decoratedLink(other, true),
+                    ...maybeEdgeList,
+                  ]);
+                }),
+              ),
+            ];
+      return u('listItem', { spread: false }, [
+        decoratedLink(nodeName),
+        ...maybeHeadList,
+      ]);
+    }),
+  );
   return u('list', { spread: false }, tailListItems);
 };
 
@@ -149,16 +139,13 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
  * @param {string} rootPath
  * @returns {import('mdast').RootContent[]}
  */
-const csToMdast = (cs, dependencies, contextPath, rootPath) => (
+const csToMdast = (cs, dependencies, contextPath, rootPath) =>
   cs
-    .flatMap(
-      (sccs) => [
-        sccsToMdast(sccs, dependencies, contextPath, rootPath),
-        u('thematicBreak'),
-      ],
-    )
-    .slice(0, -1)
-);
+    .flatMap((sccs) => [
+      sccsToMdast(sccs, dependencies, contextPath, rootPath),
+      u('thematicBreak'),
+    ])
+    .slice(0, -1);
 
 /**
  * @param {DirNode} dirNode
@@ -180,27 +167,20 @@ const dirNodeToMdast = (dirNode, rootPath) => {
   const dirNodeChildren = cs
     .flat()
     .flat()
-    .flatMap((name) => dirNodeToMdast(
-      /** @type {DirNode} */ (subnodes.get(name)),
-      rootPath,
-    ));
+    .flatMap((name) =>
+      dirNodeToMdast(/** @type {DirNode} */ (subnodes.get(name)), rootPath),
+    );
 
-  const dirNodeHeading = u(
-    'heading',
-    { depth: /** @type {1} */ (1) },
-    [link(path.relative(rootPath, fullName) || '.')],
-  );
+  const dirNodeHeading = u('heading', { depth: /** @type {1} */ (1) }, [
+    link(path.relative(rootPath, fullName) || '.'),
+  ]);
   const dirNodeContent = csToMdast(
     cs,
     dependencies,
     nonTrivial.fullName,
     rootPath,
   );
-  return [
-    ...dirNodeChildren,
-    dirNodeHeading,
-    ...dirNodeContent,
-  ];
+  return [...dirNodeChildren, dirNodeHeading, ...dirNodeContent];
 };
 
 /**
@@ -210,16 +190,14 @@ const dirNodeToMdast = (dirNode, rootPath) => {
  */
 const printDeps = async (entries, workingDir) => {
   const depTree = await parseDependencyTree(entries, {});
-  const edges = Object
-    .entries(depTree)
-    .flatMap(
-      ([from, to]) => (to ?? [])
-        // ignore core modules
-        .filter(({ request }) => require.resolve.paths(request) != null)
-        .map(({ id }) => id)
-        .filter(isNotNull)
-        .map((id) => ({ tail: path.resolve(from), head: path.resolve(id) })),
-    );
+  const edges = Object.entries(depTree).flatMap(([from, to]) =>
+    (to ?? [])
+      // ignore core modules
+      .filter(({ request }) => require.resolve.paths(request) != null)
+      .map(({ id }) => id)
+      .filter((value) => value != null)
+      .map((id) => ({ tail: path.resolve(from), head: path.resolve(id) })),
+  );
   const dirNode = formDirNode(edges);
   const rootNode = findHighestNonTrivialDescendant(dirNode);
   if (rootNode === undefined) {
@@ -231,22 +209,4 @@ const printDeps = async (entries, workingDir) => {
   console.log(toMarkdown(resultMdast));
 };
 
-const { program } = commander;
-program
-  .name('literatura')
-  .description(
-    'CLI to build topologically ordered literature from code '
-    + 'with respect for code directory structure.',
-  )
-  .argument(
-    '<entries...>',
-    'entries for dependency tree traversal (see manual for dpdm)',
-  );
-
-program.parse();
-
-const entries = program.args;
-
-const workingDir = process.cwd();
-
-printDeps(entries, workingDir);
+export default printDeps;

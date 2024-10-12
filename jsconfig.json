@@ -2,5 +2,10 @@
   "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
     "checkJs": true
-  }
+  },
+  "include": [
+    "src/**/*",
+    "index.js",
+    "eslint.config.js"
+  ]
 }

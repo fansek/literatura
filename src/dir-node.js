@@ -27,9 +27,9 @@ const newDirNode = (name, fullName) => ({
  * @param {Edge[]} edges
  * @returns {string[]}
  */
-const findNodes = (edges) => (
-  [...new Set(edges.flatMap(({ tail, head }) => [tail, head]))]
-);
+const findNodes = (edges) => [
+  ...new Set(edges.flatMap(({ tail, head }) => [tail, head])),
+];
 
 /**
  * @param {Edge[]} edges
@@ -41,20 +41,15 @@ const formDirNode = (edges, pathSeparator = path.sep) => {
   const dirNode = newDirNode('/', '/');
   nodes.forEach((node) => {
     let current = dirNode;
-    node
-      .split(pathSeparator)
-      .forEach((name, index, vArray) => {
-        const { subnodes } = current;
-        let next = subnodes.get(name);
-        if (next == null) {
-          next = newDirNode(
-            name,
-            vArray.slice(0, index + 1).join(pathSeparator),
-          );
-          subnodes.set(name, next);
-        }
-        current = next;
-      });
+    node.split(pathSeparator).forEach((name, index, vArray) => {
+      const { subnodes } = current;
+      let next = subnodes.get(name);
+      if (next == null) {
+        next = newDirNode(name, vArray.slice(0, index + 1).join(pathSeparator));
+        subnodes.set(name, next);
+      }
+      current = next;
+    });
   });
   /** @type {Map<string, Set<string>>} */
   const edgeSet = new Map();
