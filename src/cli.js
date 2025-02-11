@@ -11,12 +11,14 @@ program
   .argument(
     '<entries...>',
     'entries for dependency tree traversal (see manual for dpdm)',
-  );
+  )
+  .option('-T, --transform');
 
 program.parse();
 
 const entries = program.args;
+const options = program.opts();
 
 const workingDir = process.cwd();
 
-printDeps(entries, workingDir);
+printDeps(entries, workingDir, Boolean(options.transform));

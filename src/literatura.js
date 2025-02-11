@@ -186,10 +186,11 @@ const dirNodeToMdast = (dirNode, rootPath) => {
 /**
  * @param {string[]} entries
  * @param {string} workingDir
+ * @param {boolean} transform
  * @returns {Promise<void>}
  */
-const printDeps = async (entries, workingDir) => {
-  const depTree = await parseDependencyTree(entries, {});
+const printDeps = async (entries, workingDir, transform) => {
+  const depTree = await parseDependencyTree(entries, { transform });
   const edges = Object.entries(depTree).flatMap(([from, to]) =>
     (to ?? [])
       // ignore core modules
