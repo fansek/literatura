@@ -7,14 +7,27 @@ const { program } = commander;
 program
   .name('hello-ts')
   .description('Testik')
-  .argument('[entries...]', 'entries for dependency tree traversal');
+  .argument('[entries...]', 'entries for dependency tree traversal')
+  .option('-p, --project <project>', 'project search path', process.cwd());
 
 program.parse();
 
 const entries = program.args;
 console.error('Entries: ' + entries);
+const options = program.opts();
+const projectSearchPath = /** @type {string} */ (options.project);
+// we need to resolve project search path because TypeScript doesn't find
+// fileNames if we don't.
+const resolvedProjectSearchPath = path.resolve(
+  process.cwd(),
+  projectSearchPath,
+);
+console.error('Project: ' + resolvedProjectSearchPath);
 
-const configFile = ts.findConfigFile(process.cwd(), ts.sys.fileExists);
+const configFile = ts.findConfigFile(
+  resolvedProjectSearchPath,
+  ts.sys.fileExists,
+);
 if (configFile == null) {
   console.error('Config file was not found.');
   process.exit(1);
