@@ -8,19 +8,21 @@
   "type": "module",
   "author": "František Grega",
   "license": "MIT",
+  "scripts": {
+    "test": "vitest --run"
+  },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
     "@tsconfig/node20": "^20.1.4",
     "@types/d3-array": "^3.2.1",
     "@types/mdast": "^4.0.4",
-    "@types/node": "^22.13.1",
+    "@types/node": "^20.17.19",
     "eslint": "^9.20.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-prettier": "^5.2.3",
     "globals": "^15.14.0",
     "prettier": "^3.5.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.23.0"
+    "typescript-eslint": "^8.23.0",
+    "vitest": "^3.1.1"
   },
   "dependencies": {
     "@dagrejs/graphlib": "^2.2.4",
