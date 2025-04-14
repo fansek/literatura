@@ -2,9 +2,15 @@
   "name": "literatura",
   "version": "1.0.0",
   "description": "Literatura - a tool for reading large codebases",
-  "main": "./index.js",
-  "exports": "./index.js",
-  "bin": "./index.js",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./*": "./src/*"
+  },
+  "bin": {
+    "literatura": "./src/cli.js",
+    "litera": "./src/cli.js"
+  },
   "type": "module",
   "author": "František Grega",
   "license": "MIT",
