@@ -1,6 +1,6 @@
 # literatura
 
-Literatura - useful tool for reading large codebases.
+Literatura - a tool for reading large codebases.
 
 ## Running
 
