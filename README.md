@@ -11,7 +11,7 @@ To uninstall literatura, run `pnpm uninstall -g literatura`.
 ## Running
 
 Run `literatura **/*` to scan project for dependencies and build result markdown
-document.
+document. You can use alias `litera` instead of `literatura`.
 
 ## Acknowledgements
 

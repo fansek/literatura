@@ -1,5 +1,21 @@
 # Next steps
 
+## Dependency Extraction
+
+We may create plugin architecture with different implementations of dependency
+extractors.
+
+Plugins for dependencies extraction:
+
+- compile-time
+  - ts-simple (internal)
+  - dpdm implementation
+- run-time
+  - node hook which will record all resolutions when they happen while importing
+    modules
+
+## Metrics to Measure
+
 I would like literatura to become a dependency graph analysis tool.
 It should measure various graph properties in order to give user insight into
 how is the code structured.
@@ -18,10 +34,12 @@ Properties it should measure:
 - edge
   - weight (depends on number of module dependencies)
 
+## Topological Sorting
+
 Sorting, which should be implemented:
 https://www.geeksforgeeks.org/lexicographically-smallest-topological-ordering/
 
-`literatura` has an alias `litera`.
+## The Algorithm
 
 How it should work:
 
