@@ -12,6 +12,20 @@ import setDefault from './set-default.js';
  */
 
 /**
+ * @param {DirNode} dirNode
+ * @returns {DirNode | undefined}
+ */
+export const findHighestNonTrivialDescendant = (dirNode) => {
+  if (dirNode.subnodes.size > 1) {
+    return dirNode;
+  }
+  if (dirNode.subnodes.size === 1) {
+    return findHighestNonTrivialDescendant([...dirNode.subnodes.values()][0]);
+  }
+  return undefined;
+};
+
+/**
  * @param {string} name
  * @param {string} fullName
  * @returns {DirNode}
