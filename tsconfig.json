@@ -3,7 +3,11 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
-    "noEmit": true
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "rootDir": "src"
   },
-  "include": ["src/**/*", "index.js", "eslint.config.js"]
+  "include": ["src/**/*"]
 }

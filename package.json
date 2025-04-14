@@ -4,8 +4,14 @@
   "description": "Literatura - a tool for reading large codebases",
   "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.js",
-    "./*": "./src/*"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./*": {
+      "types": "./dist/*",
+      "default": "./src/*"
+    }
   },
   "bin": {
     "literatura": "./src/cli.js",
@@ -15,6 +21,8 @@
   "author": "František Grega",
   "license": "MIT",
   "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
     "test": "vitest --run"
   },
   "devDependencies": {
