@@ -15,7 +15,7 @@
   },
   "bin": {
     "literatura": "./src/cli.js",
-    "litera": "./src/cli.js"
+    "lit": "./src/cli.js"
   },
   "type": "module",
   "author": "František Grega",
