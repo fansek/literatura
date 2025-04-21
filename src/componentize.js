@@ -2,15 +2,15 @@ import graphlib from '@dagrejs/graphlib';
 import { sort } from 'd3-array';
 
 /**
- * @typedef {import('./dir-node.js').DirNode} DirNode
+ * @typedef {import('./dir.js').Dir} Dir
  */
 
 /**
- * @param {DirNode} dirNode
+ * @param {Dir} dir
  * @returns {graphlib.Graph}
  */
-const convertToGraph = (dirNode) => {
-  const { subnodes, dependencies } = dirNode;
+const convertToGraph = (dir) => {
+  const { subnodes, dependencies } = dir;
   // sorting has influence on the final topological ordering when breaking ties
   return graphlib.json.read({
     nodes: sort(subnodes.keys()).map((v) => ({ v })),
@@ -31,7 +31,7 @@ const componentizeGraph = (graph) =>
     .map(graphlib.alg.tarjan);
 
 /**
- * @param {DirNode} node
+ * @param {Dir} node
  * @returns {string[][][]}
  */
 const componentize = (node) => componentizeGraph(convertToGraph(node));

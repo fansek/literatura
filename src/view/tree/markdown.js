@@ -3,12 +3,11 @@ import { sort } from 'd3-array';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import { u } from 'unist-builder';
 import componentize from '../../componentize.js';
-import { findHighestNonTrivialDescendant } from '../../dir-node.js';
+import { findHighestNonTrivialDescendant } from '../../dir.js';
 
 /**
- * @typedef {import('../../dir-node.js').DirNode} DirNode
- * @typedef {DirNode['dependencies']} Dependencies
- * @typedef {import('../../dir-node.js').Edge} Edge
+ * @typedef {import('../../dir.js').Dir} Dir
+ * @typedef {Dir['dependencies']} Dependencies
  */
 
 /**
@@ -39,7 +38,7 @@ const link = (url, title = url) => u('link', { url }, [u('text', title)]);
  */
 const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
   /**
-   * @param {Edge} edge
+   * @param {{tail: string; head: string}} edge
    * @returns {import('mdast').ListItem}
    */
   const edgeToMdast = ({ tail, head }) =>
@@ -81,7 +80,11 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
               u(
                 'list',
                 { spread: false },
-                sort(deps, ([other]) => other).map(([other, edges]) => {
+                sort(deps, ([other]) => other).map(([other, graph]) => {
+                  const edges = [...graph].flatMap(([tail, headSet]) =>
+                    [...headSet].map((head) => ({ tail, head })),
+                  );
+
                   const maybeEdgeList =
                     edges.length === 1 &&
                     nodeName === path.relative(contextPath, edges[0].tail) &&
@@ -130,12 +133,12 @@ const csToMdast = (cs, dependencies, contextPath, rootPath) =>
     .slice(0, -1);
 
 /**
- * @param {DirNode} dirNode
+ * @param {Dir} dir
  * @param {string} rootPath
  * @returns {import('mdast').RootContent[]}
  */
-const dirNodeToMdast = (dirNode, rootPath) => {
-  const nonTrivial = findHighestNonTrivialDescendant(dirNode);
+const dirToMdast = (dir, rootPath) => {
+  const nonTrivial = findHighestNonTrivialDescendant(dir);
   // do not print anything for leaf nodes (modules, files)
   // or trivial nodes (with single descendant only)
   if (nonTrivial == null) {
@@ -146,27 +149,22 @@ const dirNodeToMdast = (dirNode, rootPath) => {
 
   const cs = sortComponents(componentize(nonTrivial));
 
-  const dirNodeChildren = cs
+  const dirChildren = cs
     .flat()
     .flat()
     .flatMap((name) =>
-      dirNodeToMdast(/** @type {DirNode} */ (subnodes.get(name)), rootPath),
+      dirToMdast(/** @type {Dir} */ (subnodes.get(name)), rootPath),
     );
 
-  const dirNodeHeading = u('heading', { depth: /** @type {1} */ (1) }, [
+  const dirHeading = u('heading', { depth: /** @type {1} */ (1) }, [
     link(path.relative(rootPath, fullName) || '.'),
   ]);
-  const dirNodeContent = csToMdast(
-    cs,
-    dependencies,
-    nonTrivial.fullName,
-    rootPath,
-  );
-  return [...dirNodeChildren, dirNodeHeading, ...dirNodeContent];
+  const dirContent = csToMdast(cs, dependencies, nonTrivial.fullName, rootPath);
+  return [...dirChildren, dirHeading, ...dirContent];
 };
 
 /**
- * @param {DirNode} rootNode
+ * @param {Dir} rootNode
  * @param {string} workingDir
  */
 const render = (rootNode, workingDir) => {
@@ -174,7 +172,7 @@ const render = (rootNode, workingDir) => {
   if (nonTrivialRootNode === undefined) {
     return '';
   }
-  const resultMdast = u('root', dirNodeToMdast(nonTrivialRootNode, workingDir));
+  const resultMdast = u('root', dirToMdast(nonTrivialRootNode, workingDir));
   return toMarkdown(resultMdast);
 };
 

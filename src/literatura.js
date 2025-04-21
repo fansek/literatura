@@ -1,16 +1,6 @@
-import { createRequire } from 'node:module';
-import * as path from 'node:path';
-import { parseDependencyTree } from 'dpdm';
-import formDirNode from './dir-node.js';
+import formDir from './dir.js';
 import renderMarkdown from './view/tree/markdown.js';
-
-const require = createRequire(import.meta.url);
-
-/**
- * @typedef {import('./dir-node.js').DirNode} DirNode
- * @typedef {DirNode['dependencies']} Dependencies
- * @typedef {import('./dir-node.js').Edge} Edge
- */
+import parse from './parser/dpdm.js';
 
 /**
  * @param {string[]} entries
@@ -19,17 +9,9 @@ const require = createRequire(import.meta.url);
  * @returns {Promise<void>}
  */
 const printDeps = async (entries, workingDir, transform) => {
-  const depTree = await parseDependencyTree(entries, { transform });
-  const edges = Object.entries(depTree).flatMap(([from, to]) =>
-    (to ?? [])
-      // ignore core modules
-      .filter(({ request }) => require.resolve.paths(request) != null)
-      .map(({ id }) => id)
-      .filter((value) => value != null)
-      .map((id) => ({ tail: path.resolve(from), head: path.resolve(id) })),
-  );
-  const dirNode = formDirNode(edges);
-  console.log(renderMarkdown(dirNode, workingDir));
+  const graph = await parse(entries, transform);
+  const dir = formDir(graph);
+  console.log(renderMarkdown(dir, workingDir));
 };
 
 export default printDeps;
