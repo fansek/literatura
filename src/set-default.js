@@ -3,7 +3,7 @@
  * @template {{}} V
  * @param {Map<K, V>} map
  * @param {K} key
- * @param {V} defaultsTo
+ * @param {NoInfer<V>} defaultsTo
  * @returns {V}
  */
 const setDefault = (map, key, defaultsTo) => {
