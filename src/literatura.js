@@ -8,7 +8,7 @@ import parse from './parser.js';
  * @returns {Promise<void>}
  */
 const literatura = async (entries, workingDir = process.cwd()) => {
-  const graph = await parse(entries);
+  const graph = await parse(entries.length === 0 ? [workingDir] : entries);
   const dir = formDir(graph);
   console.log(renderMarkdown(dir, workingDir));
 };

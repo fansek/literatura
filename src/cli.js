@@ -18,7 +18,6 @@ program.parse();
 
 const entries = program.args;
 const options = program.opts();
+const workingDir = options.workingDir;
 
-const workingDir = options.workingDir ?? process.cwd();
-
-literatura(entries.length === 0 ? [workingDir] : entries, workingDir);
+literatura(entries, workingDir);
