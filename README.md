@@ -15,4 +15,4 @@ document. You can use alias `litera` instead of `literatura`.
 
 ## Acknowledgements
 
-literatura uses `dpdm` for dependency list retrieval.
+literatura was inspired by `dpdm` for dependency list retrieval.

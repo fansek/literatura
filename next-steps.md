@@ -9,7 +9,6 @@ Plugins for dependencies extraction:
 
 - compile-time
   - ts-simple (internal)
-  - dpdm implementation
 - run-time
   - node hook which will record all resolutions when they happen while importing
     modules

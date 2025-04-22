@@ -1,5 +1,5 @@
 import * as commander from 'commander';
-import printDeps from './literatura.js';
+import literatura from './literatura.js';
 
 const { program } = commander;
 program
@@ -9,16 +9,16 @@ program
       'with respect for code directory structure.',
   )
   .argument(
-    '<entries...>',
-    'entries for dependency tree traversal (see manual for dpdm)',
+    '[entries...]',
+    'TSConfig search path entries for dependency tree traversal',
   )
-  .option('-T, --transform');
+  .option('-w, --working-dir [working dir]', 'working directory');
 
 program.parse();
 
 const entries = program.args;
 const options = program.opts();
 
-const workingDir = process.cwd();
+const workingDir = options.workingDir ?? process.cwd();
 
-printDeps(entries, workingDir, Boolean(options.transform));
+literatura(entries.length === 0 ? [workingDir] : entries, workingDir);
