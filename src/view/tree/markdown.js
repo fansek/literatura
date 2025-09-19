@@ -152,9 +152,9 @@ const dirToMdast = (dir, baseDir) => {
   const dirChildren = cs
     .flat()
     .flat()
-    .flatMap((name) =>
-      dirToMdast(/** @type {Dir} */ (subnodes.get(name)), baseDir),
-    );
+    .map((name) => subnodes.get(name))
+    .filter((d) => d != null)
+    .flatMap((d) => dirToMdast(d, baseDir));
 
   const dirHeading = u('heading', { depth: /** @type {1} */ (1) }, [
     link(path.relative(baseDir, fullName) || '.'),
