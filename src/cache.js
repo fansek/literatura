@@ -89,10 +89,13 @@ export const serialize = (graph, baseDir) => {
     ]),
   );
   const fileMap = new Map(files.map((file, index) => [file, index]));
-  const refs = graphEntries.map(({ tail, heads }) => [
-    /** @type {number} */ (fileMap.get(tail)),
-    ...heads.map((head) => /** @type {number} */ (fileMap.get(head))),
-  ]);
+  const refs = sort(
+    graphEntries.map(({ tail, heads }) => [
+      /** @type {number} */ (fileMap.get(tail)),
+      ...sort(heads.map((head) => /** @type {number} */ (fileMap.get(head)))),
+    ]),
+    ([tail]) => tail,
+  );
   return { version, files, refs };
 };
 
