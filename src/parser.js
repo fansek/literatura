@@ -11,7 +11,9 @@ const parseTsConfig = (searchPath) => {
   const resolvedSearchPath = path.resolve(process.cwd(), searchPath);
   console.error('Search path: ' + resolvedSearchPath);
 
-  const configFile = ts.findConfigFile(resolvedSearchPath, ts.sys.fileExists);
+  const configFile = ts.sys.fileExists(resolvedSearchPath)
+    ? resolvedSearchPath
+    : ts.findConfigFile(resolvedSearchPath, ts.sys.fileExists);
   if (configFile == null) {
     console.error('Config file was not found.');
     process.exit(1);
