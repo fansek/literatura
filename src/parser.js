@@ -4,10 +4,6 @@ import ts from 'typescript';
 
 /**
  * @param {string} searchPath
- * @returns {{
-    fileNames: string[];
-    options: ts.CompilerOptions;
-  }}
  */
 const parseTsConfig = (searchPath) => {
   // we need to resolve project search path because TypeScript doesn't find
@@ -22,20 +18,30 @@ const parseTsConfig = (searchPath) => {
   }
   console.error('Config file: ' + configFile);
 
-  const maybeConfig = ts.readConfigFile(configFile, ts.sys.readFile);
-  if (maybeConfig.error) {
-    console.error('Reading config file failed: ' + maybeConfig.error);
-    process.exit(1);
-  }
-
-  const jsonConfigFileContent = ts.parseJsonConfigFileContent(
-    maybeConfig.config,
-    ts.sys,
-    path.dirname(configFile),
+  const unrecoverableConfigFileDiagnostics =
+    /** @type {ts.Diagnostic[]} */ ([]);
+  const jsonConfigFileContent = ts.getParsedCommandLineOfConfigFile(
+    configFile,
+    undefined,
+    {
+      ...ts.sys,
+      onUnRecoverableConfigFileDiagnostic: (d) => {
+        unrecoverableConfigFileDiagnostics.push(d);
+      },
+    },
   );
-  if (jsonConfigFileContent.errors.length > 0) {
+
+  if (
+    jsonConfigFileContent == null ||
+    jsonConfigFileContent.errors.length > 0 ||
+    unrecoverableConfigFileDiagnostics.length > 0
+  ) {
     console.error(
-      'Parsing config file content failed: ' + jsonConfigFileContent.errors,
+      'Parsing config file content failed: ' +
+        [
+          ...unrecoverableConfigFileDiagnostics,
+          ...(jsonConfigFileContent?.errors ?? []),
+        ],
     );
     process.exit(1);
   }
@@ -43,12 +49,11 @@ const parseTsConfig = (searchPath) => {
 };
 
 /**
- * @param {string | { fileNames: string[]; options: ts.CompilerOptions }} entry
- * @returns {Promise<import('./dir.js').Graph>}
+ * @param {string | ts.ParsedCommandLine} config search path or config file
  */
-export const parseSingle = async (entry) => {
+export const parse = async (config) => {
   const { fileNames, options } =
-    typeof entry === 'string' ? parseTsConfig(entry) : entry;
+    typeof config === 'string' ? parseTsConfig(config) : config;
 
   const host = ts.createCompilerHost(options);
   /**
@@ -61,7 +66,6 @@ export const parseSingle = async (entry) => {
 
   const depsByFileName = await Promise.all(
     fileNames.map(async (fileName) => {
-      console.error('Parsing entry ' + fileName);
       const sourceText = await fs.readFile(fileName, 'utf8');
       const source = ts.createSourceFile(
         fileName,
@@ -110,15 +114,6 @@ export const parseSingle = async (entry) => {
     }),
   );
   return new Map(depsByFileName);
-};
-
-/**
- * @param {string[]} entries
- * @returns {Promise<import('./dir.js').Graph>}
- */
-export const parse = async (entries) => {
-  const graphs = await Promise.all(entries.map(parseSingle));
-  return new Map(graphs.flatMap((graph) => [...graph.entries()]));
 };
 
 export default parse;

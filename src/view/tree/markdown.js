@@ -33,10 +33,10 @@ const link = (url, title = url) => u('link', { url }, [u('text', title)]);
  * @param {string[][]} sccs
  * @param {Dependencies} dependencies
  * @param {string} contextPath
- * @param {string} rootPath
+ * @param {string} baseDir a base dir path
  * @returns {import('mdast').List}
  */
-const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
+const sccsToMdast = (sccs, dependencies, contextPath, baseDir) => {
   /**
    * @param {{tail: string; head: string}} edge
    * @returns {import('mdast').ListItem}
@@ -44,9 +44,9 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
   const edgeToMdast = ({ tail, head }) =>
     u('listItem', [
       u('paragraph', [
-        link(path.relative(rootPath, tail), path.relative(contextPath, tail)),
+        link(path.relative(baseDir, tail), path.relative(contextPath, tail)),
         u('text', ' → '),
-        link(path.relative(rootPath, head), path.relative(contextPath, head)),
+        link(path.relative(baseDir, head), path.relative(contextPath, head)),
       ]),
     ]);
   const cyclicDeps = new Set(
@@ -61,7 +61,7 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
   const decoratedLink = (nodeName, arrow) => {
     const prefix = arrow ? [u('text', '↘ ')] : [];
     const l = link(
-      path.relative(rootPath, path.join(contextPath, nodeName)),
+      path.relative(baseDir, path.join(contextPath, nodeName)),
       nodeName,
     );
     const maybeEmphasised = cyclicDeps.has(nodeName)
@@ -121,23 +121,23 @@ const sccsToMdast = (sccs, dependencies, contextPath, rootPath) => {
  * @param {string[][][]} cs
  * @param {Dependencies} dependencies
  * @param {string} contextPath
- * @param {string} rootPath
+ * @param {string} baseDir a base dir path
  * @returns {import('mdast').RootContent[]}
  */
-const csToMdast = (cs, dependencies, contextPath, rootPath) =>
+const csToMdast = (cs, dependencies, contextPath, baseDir) =>
   cs
     .flatMap((sccs) => [
-      sccsToMdast(sccs, dependencies, contextPath, rootPath),
+      sccsToMdast(sccs, dependencies, contextPath, baseDir),
       u('thematicBreak'),
     ])
     .slice(0, -1);
 
 /**
  * @param {Dir} dir
- * @param {string} rootPath
+ * @param {string} baseDir a base dir path
  * @returns {import('mdast').RootContent[]}
  */
-const dirToMdast = (dir, rootPath) => {
+const dirToMdast = (dir, baseDir) => {
   const nonTrivial = findHighestNonTrivialDescendant(dir);
   // do not print anything for leaf nodes (modules, files)
   // or trivial nodes (with single descendant only)
@@ -153,27 +153,27 @@ const dirToMdast = (dir, rootPath) => {
     .flat()
     .flat()
     .flatMap((name) =>
-      dirToMdast(/** @type {Dir} */ (subnodes.get(name)), rootPath),
+      dirToMdast(/** @type {Dir} */ (subnodes.get(name)), baseDir),
     );
 
   const dirHeading = u('heading', { depth: /** @type {1} */ (1) }, [
-    link(path.relative(rootPath, fullName) || '.'),
+    link(path.relative(baseDir, fullName) || '.'),
   ]);
-  const dirContent = csToMdast(cs, dependencies, nonTrivial.fullName, rootPath);
+  const dirContent = csToMdast(cs, dependencies, nonTrivial.fullName, baseDir);
   return [...dirChildren, dirHeading, ...dirContent];
 };
 
 /**
  * @param {Dir} rootNode
- * @param {string} workingDir
+ * @param {string} baseDir a base dir path
  */
-const render = (rootNode, workingDir) => {
+const render = (rootNode, baseDir) => {
   const nonTrivialRootNode = findHighestNonTrivialDescendant(rootNode);
   if (nonTrivialRootNode === undefined) {
-    return '';
+    return;
   }
-  const resultMdast = u('root', dirToMdast(nonTrivialRootNode, workingDir));
-  return toMarkdown(resultMdast);
+  const resultMdast = u('root', dirToMdast(nonTrivialRootNode, baseDir));
+  process.stdout.write(toMarkdown(resultMdast) + '\n');
 };
 
 export default render;

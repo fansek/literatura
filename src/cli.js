@@ -1,6 +1,11 @@
 import * as commander from 'commander';
 import literatura from './literatura.js';
 
+/**
+ * @param {unknown} value
+ */
+const maybeString = (value) => (value == null ? undefined : String(value));
+
 const { program } = commander;
 program
   .name('literatura')
@@ -12,12 +17,16 @@ program
     '[entries...]',
     'TSConfig search path entries for dependency tree traversal',
   )
-  .option('-w, --working-dir [working dir]', 'working directory');
+  .option('--tsconfig [TSConfig]', 'TSConfig search path, defaults to cwd')
+  .option('--format [format]', 'format (values: md, plain, graph)')
+  .option('--cache', 'cache');
 
 program.parse();
 
 const entries = program.args;
 const options = program.opts();
-const workingDir = options.workingDir;
+const tsconfig = maybeString(options.tsconfig);
+const format = maybeString(options.format);
+const cache = Boolean(options.cache);
 
-literatura(entries, workingDir);
+await literatura(entries, { tsconfig, format, cache });
