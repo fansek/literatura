@@ -21,7 +21,7 @@ const literatura = async (
   {
     base: baseDir = process.cwd(),
     tsconfig: tsconfigSearchPath = process.cwd(),
-    format = 'md',
+    format,
     cache: cacheEnabled,
   },
 ) => {
