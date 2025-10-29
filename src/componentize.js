@@ -2,38 +2,20 @@ import graphlib from '@dagrejs/graphlib';
 import { sort } from 'd3-array';
 
 /**
- * @typedef {import('./dir.js').Dir} Dir
- */
-
-/**
- * @param {Dir} dir
- * @returns {graphlib.Graph}
- */
-const convertToGraph = (dir) => {
-  const { subnodes, dependencies } = dir;
-  // sorting has influence on the final topological ordering when breaking ties
-  return graphlib.json.read({
-    nodes: sort(subnodes.keys()).map((v) => ({ v })),
-    edges: sort(dependencies, ([v]) => v).flatMap(([v, ws]) =>
-      sort(ws.keys()).map((w) => ({ v, w })),
-    ),
-  });
-};
-
-/**
- * @param {graphlib.Graph} graph
+ * @template M
+ * @param {Map<string, M>} moduleGraph
+ * @param {(module: M) => Iterable<string>} deps
  * @returns {string[][][]}
  */
-const componentizeGraph = (graph) =>
-  graphlib.alg
+export const componentizeModuleGraph = (moduleGraph, deps) => {
+  const graph = graphlib.json.read({
+    nodes: sort(moduleGraph.keys()).map((v) => ({ v })),
+    edges: sort(moduleGraph, ([m]) => m).flatMap(([name, m]) =>
+      sort(deps(m)).map((dep) => ({ v: name, w: dep })),
+    ),
+  });
+  return graphlib.alg
     .components(graph)
     .map((c) => graph.filterNodes(c.includes.bind(c)))
     .map(graphlib.alg.tarjan);
-
-/**
- * @param {Dir} node
- * @returns {string[][][]}
- */
-const componentize = (node) => componentizeGraph(convertToGraph(node));
-
-export default componentize;
+};

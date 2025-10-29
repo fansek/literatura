@@ -3,29 +3,29 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 
-const DEFAULT_CACHE_FILENAME = '.literatura-cache.json';
+const DEFAULT_STORE_FILENAME = '.literatura-store.json';
 const PKG_VERSION = pkg.version;
 
 /**
  * @param {string} baseDir a base dir path
  */
-const getCachePath = (baseDir) => path.join(baseDir, DEFAULT_CACHE_FILENAME);
+const getStorePath = (baseDir) => path.join(baseDir, DEFAULT_STORE_FILENAME);
 
 /**
- * @param {unknown} cacheObj
+ * @param {unknown} storeObj
  * @param {string} baseDir a base dir path
  */
-export const deserialize = (cacheObj, baseDir) => {
+export const deserialize = (storeObj, baseDir) => {
   if (
-    cacheObj == null ||
-    typeof cacheObj !== 'object' ||
-    !('version' in cacheObj) ||
-    !('files' in cacheObj) ||
-    !('refs' in cacheObj)
+    storeObj == null ||
+    typeof storeObj !== 'object' ||
+    !('version' in storeObj) ||
+    !('files' in storeObj) ||
+    !('refs' in storeObj)
   ) {
     return undefined;
   }
-  const { version, files, refs } = cacheObj;
+  const { version, files, refs } = storeObj;
   if (
     version !== PKG_VERSION ||
     !Array.isArray(files) ||
@@ -59,14 +59,14 @@ export const deserialize = (cacheObj, baseDir) => {
 };
 
 /**
- * @param {string} cachePath
+ * @param {string} storePath
  * @param {string} baseDir a base dir path
  */
-const read = async (cachePath, baseDir) => {
+const read = async (storePath, baseDir) => {
   try {
-    const cacheFileContent = await fs.readFile(cachePath, 'utf-8');
-    const cacheObj = /** @type {unknown} */ (JSON.parse(cacheFileContent));
-    return deserialize(cacheObj, baseDir);
+    const storeFileContent = await fs.readFile(storePath, 'utf-8');
+    const storeObj = /** @type {unknown} */ (JSON.parse(storeFileContent));
+    return deserialize(storeObj, baseDir);
   } catch {
     return undefined;
   }
@@ -100,15 +100,15 @@ export const serialize = (graph, baseDir) => {
 };
 
 /**
- * @param {string} cachePath
+ * @param {string} storePath
  * @param {Map<string, Set<string>>} graph
  * @param {string} baseDir a base dir path
  */
-const write = async (cachePath, graph, baseDir) => {
+const write = async (storePath, graph, baseDir) => {
   try {
-    const cacheObj = serialize(graph, baseDir);
-    const cacheFileContent = JSON.stringify(cacheObj);
-    await fs.writeFile(cachePath, cacheFileContent, 'utf-8');
+    const storeObj = serialize(graph, baseDir);
+    const storeFileContent = JSON.stringify(storeObj);
+    await fs.writeFile(storePath, storeFileContent, 'utf-8');
   } catch {
     // no-op
   }
@@ -118,15 +118,15 @@ const write = async (cachePath, graph, baseDir) => {
  * @param {() => Promise<Map<string, Set<string>>>} makeGraph
  * @param {string} baseDir a base dir path
  */
-export const useCache = async (makeGraph, baseDir) => {
-  const cachePath = getCachePath(baseDir);
-  const cachedGraph = await read(cachePath, baseDir);
-  if (cachedGraph != null) {
-    console.error(`Cache hit: ${cachePath}`);
-    return cachedGraph;
+export const useStore = async (makeGraph, baseDir) => {
+  const storePath = getStorePath(baseDir);
+  const storedGraph = await read(storePath, baseDir);
+  if (storedGraph != null) {
+    console.error(`Store hit: ${storePath}`);
+    return storedGraph;
   }
   const newGraph = await makeGraph();
-  await write(cachePath, newGraph, baseDir);
-  console.error(`Cache written: ${cachePath}`);
+  await write(storePath, newGraph, baseDir);
+  console.error(`Store written: ${storePath}`);
   return newGraph;
 };

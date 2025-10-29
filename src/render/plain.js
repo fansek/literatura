@@ -2,7 +2,7 @@ import { relative } from 'node:path';
 import { sort } from 'd3-array';
 
 /**
- * @param {import('../dir.js').Graph} graph
+ * @param {Map<string, Set<string>>} graph
  * @param {string} baseDir a base dir path
  */
 const render = (graph, baseDir) => {

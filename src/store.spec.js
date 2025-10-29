@@ -1,11 +1,11 @@
 import { expect, it } from 'vitest';
-import { deserialize, serialize } from './cache.js';
+import { deserialize, serialize } from './store.js';
 import pkg from '../package.json' with { type: 'json' };
 
 const commonProps = { version: pkg.version };
 const baseDir = '/path';
 
-it('does not deserialize an invalid cache', () => {
+it('does not deserialize an invalid store', () => {
   expect(deserialize({ ...commonProps }, baseDir)).toBeUndefined();
   expect(
     deserialize({ ...commonProps, files: [1, 2, 3], refs: [] }, baseDir),
@@ -22,13 +22,13 @@ it('does not deserialize an invalid cache', () => {
   expect(deserialize({ files: [], refs: [] }, baseDir)).toBeUndefined();
 });
 
-it('deserializes a valid empty cache', () => {
+it('deserializes a valid empty store', () => {
   expect(deserialize({ ...commonProps, files: [], refs: [] }, baseDir)).toEqual(
     new Map(),
   );
 });
 
-it('deserializes a valid non-empty cache', () => {
+it('deserializes a valid non-empty store', () => {
   expect(
     deserialize(
       {
@@ -57,7 +57,7 @@ it('deserializes what was serialized before', () => {
   expect(deserialize(serialize(graph, baseDir), baseDir)).toEqual(graph);
 });
 
-it('serializes a map into a cache', () => {
+it('serializes a map into a store', () => {
   expect(
     serialize(
       new Map([

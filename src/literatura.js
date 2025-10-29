@@ -1,13 +1,27 @@
 import { lstat } from 'node:fs';
-import formDir from './dir.js';
-import read from './reader.js';
+import { resolve } from 'node:path';
+import renderPlain from './render/plain.js';
+import renderEntries from './render/entry.js';
+import { useStore } from './store.js';
+
+/**
+ * @param {string} tsconfigSearchPath
+ * @param {string} baseDir a base dir path
+ */
+const read = async (tsconfigSearchPath, baseDir) => {
+  const buildStore = async () => {
+    const build = (await import('./build.js')).default;
+    return build(tsconfigSearchPath);
+  };
+  return useStore(buildStore, baseDir);
+};
 
 /**
  * @typedef {{
  *   base?: string;
- *   tsconfig?: string;
- *   format?: string;
- *   cache?: boolean;
+ *   tsconfig?: string | undefined;
+ *   node: string;
+ *   edge: string;
  * }} Options
  */
 
@@ -21,8 +35,8 @@ const literatura = async (
   {
     base: baseDir = process.cwd(),
     tsconfig: tsconfigSearchPath = process.cwd(),
-    format,
-    cache: cacheEnabled,
+    node,
+    edge,
   },
 ) => {
   lstat(baseDir, (err, stats) => {
@@ -32,22 +46,15 @@ const literatura = async (
     }
   });
 
-  const graph = await read(tsconfigSearchPath, baseDir, cacheEnabled);
-  if (format === 'graph') {
-    const renderGraph = (await import('./view/graph.js')).default;
-    renderGraph(graph, baseDir);
-    return;
-  }
-  const dir = formDir(graph);
+  const graph = await read(tsconfigSearchPath, baseDir);
 
-  if (format === 'md') {
-    const renderMarkdown = (await import('./view/tree/markdown.js')).default;
-    renderMarkdown(dir, baseDir);
+  if (entries.length === 0) {
+    renderPlain(graph, baseDir);
     return;
   }
 
-  const renderPlain = (await import('./view/tree/plain.js')).default;
-  renderPlain(dir, baseDir);
+  const resolvedEntries = entries.map((entry) => resolve(baseDir, entry));
+  renderEntries(graph, resolvedEntries, { node, edge });
 };
 
 export default literatura;

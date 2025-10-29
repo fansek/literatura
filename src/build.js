@@ -51,9 +51,11 @@ const parseTsConfig = (searchPath) => {
 };
 
 /**
+ * Builds literatura store.
+ *
  * @param {string | ts.ParsedCommandLine} config search path or config file
  */
-export const parse = async (config) => {
+export const build = async (config) => {
   const { fileNames, options } =
     typeof config === 'string' ? parseTsConfig(config) : config;
 
@@ -118,4 +120,4 @@ export const parse = async (config) => {
   return new Map(depsByFileName);
 };
 
-export default parse;
+export default build;
