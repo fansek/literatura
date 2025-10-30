@@ -3,13 +3,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 
-const DEFAULT_STORE_FILENAME = '.literatura-store.json';
+export const DEFAULT_STORE_FILENAME = '.literatura-store.json';
 const PKG_VERSION = pkg.version;
 
 /**
  * @param {string} baseDir a base dir path
+ * @param {string} [storeFilename] a store filename
  */
-const getStorePath = (baseDir) => path.join(baseDir, DEFAULT_STORE_FILENAME);
+const resolveStorePath = (baseDir, storeFilename) =>
+  path.resolve(baseDir, storeFilename ?? DEFAULT_STORE_FILENAME);
 
 /**
  * @param {unknown} storeObj
@@ -117,9 +119,10 @@ const write = async (storePath, graph, baseDir) => {
 /**
  * @param {() => Promise<Map<string, Set<string>>>} makeGraph
  * @param {string} baseDir a base dir path
+ * @param {string} [storeFilename] a store filename
  */
-export const useStore = async (makeGraph, baseDir) => {
-  const storePath = getStorePath(baseDir);
+export const useStore = async (makeGraph, baseDir, storeFilename) => {
+  const storePath = resolveStorePath(baseDir, storeFilename);
   const storedGraph = await read(storePath, baseDir);
   if (storedGraph != null) {
     console.error(`Store hit: ${storePath}`);

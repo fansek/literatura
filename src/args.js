@@ -1,7 +1,15 @@
 import { parseArgs } from 'node:util';
+import { DEFAULT_STORE_FILENAME } from './store.js';
 
 const options = /** @type {const} */ ({
   help: { type: 'boolean', short: 'h', description: 'print this help message' },
+  store: {
+    type: 'string',
+    short: 's',
+    default: DEFAULT_STORE_FILENAME,
+    description: 'literatura store filename',
+    arg: 'path',
+  },
   tsconfig: {
     type: 'string',
     short: 'x',
@@ -80,7 +88,10 @@ const parse = (args) => {
       return printUsage(true);
     }
 
-    return { entries: parsedArgs.positionals, options: parsedArgs.values };
+    return {
+      entries: parsedArgs.positionals,
+      options: parsedArgs.values,
+    };
   } catch {
     return printUsage();
   }

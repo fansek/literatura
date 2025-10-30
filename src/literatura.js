@@ -1,33 +1,45 @@
-import { lstat } from 'node:fs';
-import { resolve } from 'node:path';
-import renderPlain from './render/plain.js';
-import renderEntries from './render/entry.js';
+import { lstat } from 'node:fs/promises';
+import render from './render.js';
 import { useStore } from './store.js';
 
 /**
  * @param {string} tsconfigSearchPath
  * @param {string} baseDir a base dir path
+ * @param {string} [storeFilename] a store filename
  */
-const read = async (tsconfigSearchPath, baseDir) => {
+const read = async (tsconfigSearchPath, baseDir, storeFilename) => {
   const buildStore = async () => {
     const build = (await import('./build.js')).default;
     return build(tsconfigSearchPath);
   };
-  return useStore(buildStore, baseDir);
+  return useStore(buildStore, baseDir, storeFilename);
 };
 
 /**
- * @typedef {{
- *   base?: string;
- *   tsconfig?: string | undefined;
- *   node: string;
- *   edge: string;
- * }} Options
+ * @param {string} baseDir
  */
+const checkBaseDir = async (baseDir) => {
+  try {
+    const stats = await lstat(baseDir);
+    if (!stats.isDirectory()) {
+      console.error(`Base is not a directory: ${baseDir}`);
+      process.exit(1);
+    }
+  } catch (e) {
+    console.error(`Error occurred while reading ${baseDir}: ${e}`);
+    process.exit(1);
+  }
+};
 
 /**
  * @param {string[]} entries
- * @param {Options} options
+ * @param {{
+ *   base?: string;
+ *   tsconfig?: string;
+ *   store?: string;
+ *   node: string;
+ *   edge: string;
+ * }} options
  * @returns {Promise<void>}
  */
 const literatura = async (
@@ -35,26 +47,16 @@ const literatura = async (
   {
     base: baseDir = process.cwd(),
     tsconfig: tsconfigSearchPath = process.cwd(),
+    store: storeFilename,
     node,
     edge,
   },
 ) => {
-  lstat(baseDir, (err, stats) => {
-    if (err != null || !stats.isDirectory()) {
-      console.error(`Base is not a directory: ${baseDir}`);
-      process.exit(1);
-    }
-  });
+  await checkBaseDir(baseDir);
 
-  const graph = await read(tsconfigSearchPath, baseDir);
+  const graph = await read(tsconfigSearchPath, baseDir, storeFilename);
 
-  if (entries.length === 0) {
-    renderPlain(graph, baseDir);
-    return;
-  }
-
-  const resolvedEntries = entries.map((entry) => resolve(baseDir, entry));
-  renderEntries(graph, resolvedEntries, { node, edge });
+  render(graph, entries, { node, edge, base: baseDir });
 };
 
 export default literatura;
