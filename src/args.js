@@ -74,7 +74,7 @@ const printUsage = (success) => {
 };
 
 /**
- * @param {string[] | undefined} [args]
+ * @param {string[]} [args]
  */
 const parse = (args) => {
   try {

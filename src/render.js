@@ -20,19 +20,14 @@ const renderPlain = (graph, baseDir) => {
 };
 
 /**
- * @param {string} tail an edge tail
- * @param {string} head an edge head
+ * @param {string} src an edge source
+ * @param {string} dst an edge destination
  */
-const findLowestCommonAncestor = (tail, head) => {
-  const tailComponents = tail.split(path.sep);
-  const headComponents = head.split(path.sep);
-  const i = tailComponents.findIndex(
-    (value, index) => value !== headComponents[index],
-  );
-  return (
-    (i === -1 ? tailComponents : tailComponents.slice(0, i)).join(path.sep) ||
-    path.sep
-  );
+const findLowestCommonAncestor = (src, dst) => {
+  const srcArr = src.split(path.sep);
+  const dstArr = dst.split(path.sep);
+  const i = srcArr.findIndex((value, index) => value !== dstArr[index]);
+  return (i === -1 ? srcArr : srcArr.slice(0, i)).join(path.sep) || path.sep;
 };
 
 /**
@@ -65,8 +60,8 @@ const renderNodes = (graph, format) => {
  * @param {string} format
  */
 const renderEdges = (graph, format) => {
-  sort([...graph], ([tail]) => tail).forEach(([src, dsts]) =>
-    sort(dsts, ([head]) => head).forEach(([dst, weight]) => {
+  sort([...graph], ([src]) => src).forEach(([src, dsts]) =>
+    sort(dsts, ([dst]) => dst).forEach(([dst, weight]) => {
       return process.stdout.write(sprintf(format, { src, dst, weight }) + '\n');
     }),
   );
@@ -82,10 +77,10 @@ const renderEntries = (graph, entries, options) => {
     path.resolve(options.base, entry),
   );
   const entrySet = new Set(resolvedEntries);
-  const edges = [...graph].flatMap(([tail, heads]) =>
-    [...heads].flatMap((head) => {
-      const lca = findLowestCommonAncestor(tail, head);
-      return entrySet.has(lca) ? [{ tail, head, lca }] : [];
+  const edges = [...graph].flatMap(([src, dsts]) =>
+    [...dsts].flatMap((dst) => {
+      const lca = findLowestCommonAncestor(src, dst);
+      return entrySet.has(lca) ? [{ src, dst, lca }] : [];
     }),
   );
   const dirs = rollup(
@@ -93,13 +88,13 @@ const renderEntries = (graph, entries, options) => {
     (edgesByLCA) =>
       rollup(
         edgesByLCA,
-        (edgesByTail) =>
+        (edgesBySrc) =>
           rollup(
-            edgesByTail,
-            (edgesByHead) => edgesByHead.length,
-            ({ head, lca }) => getHighestComponent(lca, head),
+            edgesBySrc,
+            (edgesByDst) => edgesByDst.length,
+            ({ dst, lca }) => getHighestComponent(lca, dst),
           ),
-        ({ tail, lca }) => getHighestComponent(lca, tail),
+        ({ src, lca }) => getHighestComponent(lca, src),
       ),
     ({ lca }) => lca,
   );

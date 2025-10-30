@@ -80,23 +80,23 @@ const read = async (storePath, baseDir) => {
  */
 export const serialize = (graph, baseDir) => {
   const version = PKG_VERSION;
-  const graphEntries = [...graph].map(([tail, heads]) => ({
-    tail: path.relative(baseDir, tail),
-    heads: [...heads].map((head) => path.relative(baseDir, head)),
+  const graphEntries = [...graph].map(([src, dsts]) => ({
+    src: path.relative(baseDir, src),
+    dsts: [...dsts].map((dst) => path.relative(baseDir, dst)),
   }));
   const files = sort(
     new Set([
-      ...graphEntries.map(({ tail }) => tail),
-      ...graphEntries.flatMap(({ heads }) => heads),
+      ...graphEntries.map(({ src }) => src),
+      ...graphEntries.flatMap(({ dsts }) => dsts),
     ]),
   );
   const fileMap = new Map(files.map((file, index) => [file, index]));
   const refs = sort(
-    graphEntries.map(({ tail, heads }) => [
-      /** @type {number} */ (fileMap.get(tail)),
-      ...sort(heads.map((head) => /** @type {number} */ (fileMap.get(head)))),
+    graphEntries.map(({ src, dsts }) => [
+      /** @type {number} */ (fileMap.get(src)),
+      ...sort(dsts.map((dst) => /** @type {number} */ (fileMap.get(dst)))),
     ]),
-    ([tail]) => tail,
+    ([src]) => src,
   );
   return { version, files, refs };
 };
