@@ -1,13 +1,15 @@
 import { parseArgs } from 'node:util';
-import { DEFAULT_STORE_FILENAME } from './store.js';
+import { DEFAULT_STORE_PATH } from './store.js';
+import { DEFAULT_NODE_FORMAT, DEFAULT_EDGE_FORMAT } from './render-graph.js';
 
 const options = /** @type {const} */ ({
   help: { type: 'boolean', short: 'h', description: 'print this help message' },
+  build: { type: 'boolean', short: 'b', description: 'build literatura store' },
   store: {
     type: 'string',
     short: 's',
-    default: DEFAULT_STORE_FILENAME,
-    description: 'literatura store filename',
+    default: DEFAULT_STORE_PATH,
+    description: 'literatura store path',
     arg: 'path',
   },
   tsconfig: {
@@ -19,14 +21,14 @@ const options = /** @type {const} */ ({
   node: {
     type: 'string',
     short: 'n',
-    default: '%(src)s\t%(ci)s:%(scci)s:%(ni)s',
+    default: DEFAULT_NODE_FORMAT,
     description: 'format nodes with provided pattern',
     arg: 'pattern',
   },
   edge: {
     type: 'string',
     short: 'e',
-    default: '%(src)s\t%(dst)s\t%(weight)s',
+    default: DEFAULT_EDGE_FORMAT,
     description: 'format edges with provided pattern',
     arg: 'pattern',
   },
@@ -55,7 +57,7 @@ CLI to build topologically ordered literature from code with respect for code
 directory structure.
 
 Arguments:
-${'  path'.padEnd(DESC_PADDING)}TSConfig search paths for dependency tree traversal
+${'  path'.padEnd(DESC_PADDING)}path entries for render function
 
 Options:
 ${
@@ -73,8 +75,13 @@ const printUsage = (success) => {
   process.exit(success ? 0 : 1);
 };
 
+const BASE_DIR = process.cwd();
+
 /**
+ * @typedef {import('./build.js').BuildProps} BuildProps
+ * @typedef {import('./render.js').RenderProps} RenderProps
  * @param {string[]} [args]
+ * @returns {{ mode: 'build' } & BuildProps | { mode: 'render' } & RenderProps}
  */
 const parse = (args) => {
   try {
@@ -87,10 +94,22 @@ const parse = (args) => {
     if (parsedArgs.values.help) {
       return printUsage(true);
     }
+    if (parsedArgs.values.build) {
+      return {
+        mode: /** @type {const} */ ('build'),
+        baseDir: BASE_DIR,
+        storePath: parsedArgs.values.store,
+        tsconfigSearchPath: parsedArgs.values.tsconfig ?? process.cwd(),
+      };
+    }
 
     return {
+      mode: /** @type {const} */ ('render'),
+      baseDir: BASE_DIR,
+      storePath: parsedArgs.values.store,
       entries: parsedArgs.positionals,
-      options: parsedArgs.values,
+      nodeFormat: parsedArgs.values.node,
+      edgeFormat: parsedArgs.values.edge,
     };
   } catch {
     return printUsage();

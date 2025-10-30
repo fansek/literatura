@@ -3,15 +3,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import pkg from '../package.json' with { type: 'json' };
 
-export const DEFAULT_STORE_FILENAME = '.literatura-store.json';
 const PKG_VERSION = pkg.version;
+
+export const DEFAULT_STORE_PATH = '.literatura-store.json';
 
 /**
  * @param {string} baseDir a base dir path
- * @param {string} [storeFilename] a store filename
+ * @param {string} [storePath] a store path
  */
-const resolveStorePath = (baseDir, storeFilename) =>
-  path.resolve(baseDir, storeFilename ?? DEFAULT_STORE_FILENAME);
+const resolveStorePath = (baseDir, storePath) =>
+  path.resolve(baseDir, storePath ?? DEFAULT_STORE_PATH);
 
 /**
  * @param {unknown} storeObj
@@ -61,16 +62,24 @@ export const deserialize = (storeObj, baseDir) => {
 };
 
 /**
- * @param {string} storePath
  * @param {string} baseDir a base dir path
+ * @param {string} [storePath]
  */
-const read = async (storePath, baseDir) => {
+export const read = async (baseDir, storePath) => {
   try {
-    const storeFileContent = await fs.readFile(storePath, 'utf-8');
+    const resolvedStorePath = resolveStorePath(baseDir, storePath);
+    const storeFileContent = await fs.readFile(resolvedStorePath, 'utf-8');
     const storeObj = /** @type {unknown} */ (JSON.parse(storeFileContent));
-    return deserialize(storeObj, baseDir);
-  } catch {
-    return undefined;
+    const value = deserialize(storeObj, baseDir);
+    if (value == null) {
+      return {
+        status: /** @type {const} */ ('rejected'),
+        reason: 'Invalid store format',
+      };
+    }
+    return { status: /** @type {const} */ ('fulfilled'), value };
+  } catch (e) {
+    return { status: /** @type {const} */ ('rejected'), reason: String(e) };
   }
 };
 
@@ -102,34 +111,18 @@ export const serialize = (graph, baseDir) => {
 };
 
 /**
- * @param {string} storePath
  * @param {Map<string, Set<string>>} graph
  * @param {string} baseDir a base dir path
+ * @param {string} [storePath]
  */
-const write = async (storePath, graph, baseDir) => {
+export const write = async (graph, baseDir, storePath) => {
   try {
     const storeObj = serialize(graph, baseDir);
     const storeFileContent = JSON.stringify(storeObj);
-    await fs.writeFile(storePath, storeFileContent, 'utf-8');
-  } catch {
-    // no-op
+    const resolvedStorePath = resolveStorePath(baseDir, storePath);
+    await fs.writeFile(resolvedStorePath, storeFileContent, 'utf-8');
+    return { status: /** @type {const} */ ('fulfilled') };
+  } catch (e) {
+    return { status: /** @type {const} */ ('rejected'), reason: String(e) };
   }
-};
-
-/**
- * @param {() => Promise<Map<string, Set<string>>>} makeGraph
- * @param {string} baseDir a base dir path
- * @param {string} [storeFilename] a store filename
- */
-export const useStore = async (makeGraph, baseDir, storeFilename) => {
-  const storePath = resolveStorePath(baseDir, storeFilename);
-  const storedGraph = await read(storePath, baseDir);
-  if (storedGraph != null) {
-    console.error(`Store hit: ${storePath}`);
-    return storedGraph;
-  }
-  const newGraph = await makeGraph();
-  await write(storePath, newGraph, baseDir);
-  console.error(`Store written: ${storePath}`);
-  return newGraph;
 };

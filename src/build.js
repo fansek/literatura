@@ -1,123 +1,21 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import ts from 'typescript';
+import buildGraph from './build-graph.js';
+import { write } from './store.js';
 
 /**
- * @param {string} searchPath
+ * @typedef {{
+ *   baseDir: string;
+ *   tsconfigSearchPath: string;
+ *   storePath?: string;
+ * }} BuildProps
+ * @param {BuildProps} options
  */
-const parseTsConfig = (searchPath) => {
-  // we need to resolve project search path because TypeScript doesn't find
-  // fileNames if we don't.
-  const resolvedSearchPath = path.resolve(process.cwd(), searchPath);
-  console.error('Search path: ' + resolvedSearchPath);
-
-  const configFile = ts.sys.fileExists(resolvedSearchPath)
-    ? resolvedSearchPath
-    : ts.findConfigFile(resolvedSearchPath, ts.sys.fileExists);
-  if (configFile == null) {
-    console.error('Config file was not found.');
-    process.exit(1);
-  }
-  console.error('Config file: ' + configFile);
-
-  const unrecoverableConfigFileDiagnostics =
-    /** @type {ts.Diagnostic[]} */ ([]);
-  const jsonConfigFileContent = ts.getParsedCommandLineOfConfigFile(
-    configFile,
-    undefined,
-    {
-      ...ts.sys,
-      onUnRecoverableConfigFileDiagnostic: (d) => {
-        unrecoverableConfigFileDiagnostics.push(d);
-      },
-    },
-  );
-
-  if (
-    jsonConfigFileContent == null ||
-    jsonConfigFileContent.errors.length > 0 ||
-    unrecoverableConfigFileDiagnostics.length > 0
-  ) {
-    console.error(
-      'Parsing config file content failed: ' +
-        [
-          ...unrecoverableConfigFileDiagnostics,
-          ...(jsonConfigFileContent?.errors ?? []),
-        ],
-    );
-    process.exit(1);
-  }
-  return jsonConfigFileContent;
-};
-
-/**
- * Builds literatura store.
- *
- * @param {string | ts.ParsedCommandLine} config search path or config file
- */
-export const build = async (config) => {
-  const { fileNames, options } =
-    typeof config === 'string' ? parseTsConfig(config) : config;
-
-  const host = ts.createCompilerHost(options);
-  /**
-   * @param {string} moduleName
-   * @param {string} containingFile
-   */
-  const resolve = (moduleName, containingFile) =>
-    ts.resolveModuleName(moduleName, containingFile, options, host)
-      .resolvedModule?.resolvedFileName;
-
-  const depsByFileName = await Promise.all(
-    fileNames.map(async (fileName) => {
-      const sourceText = await fs.readFile(fileName, 'utf8');
-      const source = ts.createSourceFile(
-        fileName,
-        sourceText,
-        ts.ScriptTarget.Latest,
-      );
-      /** @type {Set<string>} */
-      const deps = new Set();
-      /**
-       * @param {string} moduleName
-       */
-      const addDep = (moduleName) => {
-        const resolvedFileName = resolve(moduleName, fileName);
-        if (resolvedFileName != null) {
-          deps.add(resolvedFileName);
-        }
-      };
-      const nodeVisitor = (/** @type {ts.Node} */ node) => {
-        if (
-          ts.isImportDeclaration(node) &&
-          ts.isStringLiteral(node.moduleSpecifier)
-        ) {
-          addDep(node.moduleSpecifier.text);
-        } else if (
-          ts.isCallExpression(node) &&
-          (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-            (ts.isIdentifier(node.expression) &&
-              node.expression.escapedText === 'require')) &&
-          node.arguments.length === 1
-        ) {
-          const nodeArgument = node.arguments[0];
-          if (ts.isStringLiteral(nodeArgument)) {
-            addDep(nodeArgument.text);
-          }
-        } else if (
-          ts.isExportDeclaration(node) &&
-          node.moduleSpecifier &&
-          ts.isStringLiteral(node.moduleSpecifier)
-        ) {
-          addDep(node.moduleSpecifier.text);
-        }
-        ts.forEachChild(node, nodeVisitor);
-      };
-      ts.forEachChild(source, nodeVisitor);
-      return /** @type {[string, Set<string>]} */ ([fileName, deps]);
-    }),
-  );
-  return new Map(depsByFileName);
+const build = async ({
+  baseDir,
+  tsconfigSearchPath = process.cwd(),
+  storePath,
+}) => {
+  const graph = await buildGraph(tsconfigSearchPath);
+  return write(graph, baseDir, storePath);
 };
 
 export default build;
