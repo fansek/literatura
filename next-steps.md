@@ -37,16 +37,3 @@ Properties it should measure:
 
 Sorting, which should be implemented:
 https://www.geeksforgeeks.org/lexicographically-smallest-topological-ordering/
-
-## The Algorithm
-
-How it should work:
-
-1. find tsconfig.json if not specified directly
-2. read all files which are included in project (with the help of tsconfig.json)
-   if not specified directly
-3. parse all files with typescript and find all imports
-4. generate a store file (something like `.literatura-store`), which will store
-   dependencies and will be used when triggered again if it is reasonably fresh
-5. analyze dependencies according to the generated dependency graph (either
-   retrieved from the store or directly from generated previous parse operation)
