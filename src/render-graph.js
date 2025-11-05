@@ -1,10 +1,10 @@
 import path from 'node:path';
 import { InternMap, rollup, sort } from 'd3-array';
-import { sprintf } from 'sprintf-js';
 import { componentizeModuleGraph } from './componentize.js';
+import sprintf from './format.js';
 
-export const DEFAULT_NODE_FORMAT = '%(src)s\t%(ci)s:%(scci)s:%(ni)s';
-export const DEFAULT_EDGE_FORMAT = '%(src)s\t%(dst)s\t%(weight)s';
+export const DEFAULT_NODE_FORMAT = '%src%t%ci';
+export const DEFAULT_EDGE_FORMAT = '%src%t%dst%t%weight';
 
 /**
  * @param {Map<string, Set<string>>} graph
@@ -44,6 +44,13 @@ const getHighestComponent = (base, child) => {
 };
 
 /**
+ * @param {unknown[]} arr
+ * @param {number} index
+ * @returns
+ */
+const formatIndex = (arr, index) => (arr.length === 1 ? '-' : index);
+
+/**
  * @param {Map<string, Map<string, number>>} graph
  * @param {string} [format]
  */
@@ -52,7 +59,12 @@ const renderNodes = (graph, format = DEFAULT_NODE_FORMAT) => {
   components.forEach((c, ci) => {
     c.forEach((scc, scci) => {
       scc.forEach((src, ni) =>
-        process.stdout.write(sprintf(format, { src, ci, scci, ni }) + '\n'),
+        process.stdout.write(
+          sprintf(format, {
+            src,
+            ci: `${formatIndex(components, ci)}:${formatIndex(c, scci)}:${formatIndex(scc, ni)}`,
+          }) + '\n',
+        ),
       );
     });
   });
