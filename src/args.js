@@ -65,6 +65,19 @@ ${
     .map((option) => formatHelpForOption(option))
     .join('\n')
 }
+
+Formatting:
+  %%: a raw %
+  %n: newline
+  %t: tab
+  %5p: property p with min length 5 left aligned
+  %-8p: property p with min length 8 right aligned
+
+Formatting properties:
+  s: source path for both node and edge display
+  d: destination path for edge display
+  w: number representing count of leaf edges for edge display
+  c: component nested index calculated in componentization
 `;
 
 /**

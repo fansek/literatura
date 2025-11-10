@@ -18,11 +18,12 @@ const sprintfToken = (value, alignSign, maxLength) => {
   return alignSign === '-' ? v.padStart(l) : v.padEnd(l);
 };
 
-const TOKEN = /%(?:%|t|n|(-)?(\d+)?(weight|src|dst|ci))/g;
+const TOKEN = /%(?:%|t|n|(-)?(\d+)?(w|s|d|c))/g;
 
 /**
+ * @typedef {'w' | 's'| 'd' | 'c'} Key
  * @param {string} format
- * @param {Partial<Record<'weight' | 'src'| 'dst' | 'ci', string | number>>} args
+ * @param {Partial<Record<Key, string | number>>} args
  */
 const sprintf = (format, args) =>
   format.replaceAll(
@@ -31,7 +32,7 @@ const sprintf = (format, args) =>
       substring,
       /** @type {string | undefined} */ alignSign,
       /** @type {string | undefined} */ maxLength,
-      /** @type {'weight' | 'src' | 'dst' | 'ci'} */ key,
+      /** @type {Key} */ key,
     ) => {
       const r = staticReplacements.get(substring);
       return r != null ? r : sprintfToken(args[key], alignSign, maxLength);
