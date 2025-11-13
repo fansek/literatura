@@ -78,6 +78,7 @@ Formatting properties:
   d: destination path for edge display
   w: number representing count of leaf edges for edge display
   c: component nested index calculated in componentization
+  g: graph
 `;
 
 /**
