@@ -76,6 +76,7 @@ Formatting:
 Formatting properties for node display:
   cni: component nested index calculated in componentization
   diag: diagram representing references between nodes
+  deg: node degree (number of leaf node references)
   src: source path
 
 Formatting properties for edge display:

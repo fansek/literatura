@@ -1,10 +1,10 @@
 import path from 'node:path';
-import { InternMap, rollup, sort } from 'd3-array';
+import { InternMap, rollup, sort, sum } from 'd3-array';
 import { componentize } from './componentize.js';
 import sprintf from './format.js';
 import drawDiagram from './draw-diagram.js';
 
-export const DEFAULT_NODE_FORMAT = '%diag%t%src';
+export const DEFAULT_NODE_FORMAT = '%diag%t%-3deg%t%src';
 export const DEFAULT_EDGE_FORMAT = '%-3weight%t%src%t%ref';
 
 /**
@@ -59,7 +59,12 @@ const renderNodes = (graph, format = DEFAULT_NODE_FORMAT) => {
   );
   components.forEach(({ src, cni }, index) => {
     process.stdout.write(
-      sprintf(format, { src, cni, diag: diagram[index] }) + '\n',
+      sprintf(format, {
+        src,
+        cni,
+        diag: diagram[index],
+        deg: sum([...(graph.get(src)?.values() ?? [])]),
+      }) + '\n',
     );
   });
 };
