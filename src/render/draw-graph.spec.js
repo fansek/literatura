@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import render, {
+import drawGraph, {
   CONT_AFTER_SRC,
   CONT_BEFORE_SRC,
   DST_AFTER_SRC,
@@ -10,14 +10,14 @@ import render, {
   SRC_MAX,
   SRC_MIN,
   VACUUM,
-} from './render-links.js';
+} from './draw-graph.js';
 
 /**
  * @param {Iterable<[string, string[]]>} entries
  */
 const doRender = (entries) => {
   const mapping = new Map(entries);
-  return render([...mapping.keys()], (src) => mapping.get(src) ?? []);
+  return drawGraph([...mapping.keys()], (src) => mapping.get(src) ?? []);
 };
 
 it('renders links', () => {

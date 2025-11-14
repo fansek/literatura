@@ -1,5 +1,5 @@
-import buildGraph from './build-graph.js';
-import { write } from './store.js';
+import buildWithTs from '../build/build-with-ts.js';
+import { write } from '../store.js';
 
 /**
  * @typedef {{
@@ -14,7 +14,7 @@ const build = async ({
   tsconfigSearchPath = process.cwd(),
   storePath,
 }) => {
-  const graph = await buildGraph(tsconfigSearchPath);
+  const graph = await buildWithTs(tsconfigSearchPath);
   return write(graph, baseDir, storePath);
 };
 

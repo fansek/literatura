@@ -1,5 +1,5 @@
-import renderGraph from './render-graph.js';
-import { read } from './store.js';
+import doRender from '../render/render.js';
+import { read } from '../store.js';
 
 /**
  * @typedef {{
@@ -22,7 +22,7 @@ const render = async ({
   if (storeReadResult.status === 'rejected') {
     return storeReadResult;
   }
-  renderGraph(storeReadResult.value, baseDir, entries, {
+  doRender(storeReadResult.value, baseDir, entries, {
     nodeFormat,
     edgeFormat,
   });

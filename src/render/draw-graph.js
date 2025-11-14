@@ -15,7 +15,7 @@ export const SRC_MAX = '└' + styleText('yellow', '@');
 /**
  * @param {number} src
  * @param {Set<number>} dsts
- * @return {[number, number]}
+ * @returns {[number, number]}
  */
 const getIndexRange = (src, dsts) => {
   const allIndices = [src, ...dsts];
@@ -70,7 +70,7 @@ const renderColumn = (src, dsts, indexRange, origColumn = []) => {
  * @param {string[]} srcs
  * @param {(src: string) => Iterable<string>} getRefs
  */
-export const render = (srcs, getRefs) => {
+const drawGraph = (srcs, getRefs) => {
   const indexBySrc = new Map(srcs.map((src, index) => [src, index]));
   /** @type {string[][]} */
   const columns = [];
@@ -104,4 +104,4 @@ export const render = (srcs, getRefs) => {
   );
 };
 
-export default render;
+export default drawGraph;

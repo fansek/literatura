@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
-import { DEFAULT_STORE_PATH } from './store.js';
-import { DEFAULT_NODE_FORMAT, DEFAULT_EDGE_FORMAT } from './render-graph.js';
+import { DEFAULT_STORE_PATH } from '../store.js';
+import { DEFAULT_NODE_FORMAT, DEFAULT_EDGE_FORMAT } from '../render/render.js';
 
 const options = /** @type {const} */ ({
   help: { type: 'boolean', short: 'h', description: 'print this help message' },

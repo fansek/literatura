@@ -2,7 +2,7 @@ import path from 'node:path';
 import { InternMap, rollup, sort } from 'd3-array';
 import { componentizeModuleGraph } from './componentize.js';
 import sprintf from './format.js';
-import renderLinks from './render-links.js';
+import renderLinks from './draw-graph.js';
 
 export const DEFAULT_NODE_FORMAT = '%g%c%t%s';
 export const DEFAULT_EDGE_FORMAT = '%-3w%t%s%t%d';
@@ -120,7 +120,7 @@ const renderEntries = (graph, baseDir, entries, options) => {
  * @param {string[]} entries
  * @param {{ nodeFormat?: string; edgeFormat?: string }} options
  */
-const renderGraph = (graph, baseDir, entries, options) => {
+const render = (graph, baseDir, entries, options) => {
   if (entries.length === 0) {
     renderPlain(graph, baseDir);
     return;
@@ -128,4 +128,4 @@ const renderGraph = (graph, baseDir, entries, options) => {
   renderEntries(graph, baseDir, entries, options);
 };
 
-export default renderGraph;
+export default render;

@@ -5,7 +5,6 @@ import { max, sort } from 'd3-array';
  * @param {unknown[]} arr
  * @param {number} index
  * @param {number} maxLength
- * @returns
  */
 const formatIndex = (arr, index, maxLength) =>
   maxLength <= 1

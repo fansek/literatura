@@ -55,7 +55,7 @@ const parseTsConfig = (searchPath) => {
  *
  * @param {string | ts.ParsedCommandLine} config search path or config file
  */
-const buildGraph = async (config) => {
+const buildWithTs = async (config) => {
   const { fileNames, options } =
     typeof config === 'string' ? parseTsConfig(config) : config;
 
@@ -120,4 +120,4 @@ const buildGraph = async (config) => {
   return new Map(depsByFileName);
 };
 
-export default buildGraph;
+export default buildWithTs;

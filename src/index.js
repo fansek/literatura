@@ -1,2 +1,2 @@
-export { default as build } from './build.js';
-export { default as render } from './render.js';
+export { default as build } from './cli/build.js';
+export { default as render } from './cli/render.js';
