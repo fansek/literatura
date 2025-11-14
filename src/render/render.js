@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { InternMap, rollup, sort } from 'd3-array';
-import { componentizeModuleGraph } from './componentize.js';
+import { componentize } from './componentize.js';
 import sprintf from './format.js';
-import renderLinks from './draw-graph.js';
+import renderLinks from './draw-diagram.js';
 
 export const DEFAULT_NODE_FORMAT = '%g%c%t%s';
 export const DEFAULT_EDGE_FORMAT = '%-3w%t%s%t%d';
@@ -49,7 +49,7 @@ const getHighestComponent = (base, child) => {
  * @param {string} [format]
  */
 const renderNodes = (graph, format = DEFAULT_NODE_FORMAT) => {
-  const components = componentizeModuleGraph(graph, (m) => m.keys());
+  const components = componentize(graph, (m) => m.keys());
   const links = renderLinks(
     components.map(({ src }) => src),
     (src) => graph.get(src)?.keys() ?? [],

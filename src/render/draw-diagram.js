@@ -30,7 +30,7 @@ const getIndexRange = (src, dsts) => {
  * @param {[number, number]} indexRange
  * @param {string[]} [origColumn]
  */
-const renderColumn = (src, dsts, indexRange, origColumn = []) => {
+const drawColumn = (src, dsts, indexRange, origColumn = []) => {
   if (dsts.size === 0) {
     return origColumn;
   }
@@ -70,7 +70,7 @@ const renderColumn = (src, dsts, indexRange, origColumn = []) => {
  * @param {string[]} srcs
  * @param {(src: string) => Iterable<string>} getRefs
  */
-const drawGraph = (srcs, getRefs) => {
+const drawDiagram = (srcs, getRefs) => {
   const indexBySrc = new Map(srcs.map((src, index) => [src, index]));
   /** @type {string[][]} */
   const columns = [];
@@ -85,9 +85,9 @@ const drawGraph = (srcs, getRefs) => {
     const [minIndex] = indexRange;
     const minCol = columns.findIndex((col) => col.length <= minIndex);
     if (minCol === -1) {
-      columns.push(renderColumn(index, refIndices, indexRange));
+      columns.push(drawColumn(index, refIndices, indexRange));
     } else {
-      columns[minCol] = renderColumn(
+      columns[minCol] = drawColumn(
         index,
         refIndices,
         indexRange,
@@ -104,4 +104,4 @@ const drawGraph = (srcs, getRefs) => {
   );
 };
 
-export default drawGraph;
+export default drawDiagram;

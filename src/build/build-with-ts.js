@@ -9,7 +9,7 @@ const parseTsConfig = (searchPath) => {
   // we need to resolve project search path because TypeScript doesn't find
   // fileNames if we don't.
   const resolvedSearchPath = path.resolve(process.cwd(), searchPath);
-  console.error('Search path: ' + resolvedSearchPath);
+  console.error(`Search path: ${resolvedSearchPath}`);
 
   const configFile = ts.sys.fileExists(resolvedSearchPath)
     ? resolvedSearchPath
@@ -18,7 +18,7 @@ const parseTsConfig = (searchPath) => {
     console.error('Config file was not found.');
     process.exit(1);
   }
-  console.error('Config file: ' + configFile);
+  console.error(`Config file: ${configFile}`);
 
   const unrecoverableConfigFileDiagnostics =
     /** @type {ts.Diagnostic[]} */ ([]);
@@ -39,11 +39,10 @@ const parseTsConfig = (searchPath) => {
     unrecoverableConfigFileDiagnostics.length > 0
   ) {
     console.error(
-      'Parsing config file content failed: ' +
-        [
-          ...unrecoverableConfigFileDiagnostics,
-          ...(jsonConfigFileContent?.errors ?? []),
-        ],
+      `Parsing config file content failed: ${[
+        ...unrecoverableConfigFileDiagnostics,
+        ...(jsonConfigFileContent?.errors ?? []),
+      ]}`,
     );
     process.exit(1);
   }

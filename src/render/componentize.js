@@ -18,7 +18,7 @@ const formatIndex = (arr, index, maxLength) =>
  * @param {Map<string, M>} moduleGraph
  * @param {(module: M) => Iterable<string>} deps
  */
-export const componentizeModuleGraph = (moduleGraph, deps) => {
+export const componentize = (moduleGraph, deps) => {
   const graph = graphlib.json.read({
     nodes: sort(moduleGraph.keys()).map((v) => ({ v })),
     edges: sort(moduleGraph, ([m]) => m).flatMap(([name, m]) =>

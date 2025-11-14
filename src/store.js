@@ -35,27 +35,27 @@ export const deserialize = (storeObj, baseDir) => {
     !files.every((file) => typeof file === 'string') ||
     !Array.isArray(refs) ||
     !refs.every(
-      (moduleRefs) =>
-        Array.isArray(moduleRefs) &&
-        moduleRefs.every((ref) => typeof ref === 'number'),
+      (refGroup) =>
+        Array.isArray(refGroup) &&
+        refGroup.every((ref) => typeof ref === 'number'),
     )
   ) {
     return undefined;
   }
   if (
     !refs.every(
-      (moduleRefs) =>
-        moduleRefs.length >= 1 &&
-        moduleRefs.every((ref) => ref >= 0 && ref < files.length),
+      (refGroup) =>
+        refGroup.length >= 1 &&
+        refGroup.every((ref) => ref >= 0 && ref < files.length),
     )
   ) {
     return undefined;
   }
   return new Map(
-    refs.map((moduleRefs) => [
-      path.resolve(baseDir, files[moduleRefs[0]]),
+    refs.map((refGroup) => [
+      path.resolve(baseDir, files[refGroup[0]]),
       new Set(
-        moduleRefs.slice(1).map((ref) => path.resolve(baseDir, files[ref])),
+        refGroup.slice(1).map((ref) => path.resolve(baseDir, files[ref])),
       ),
     ]),
   );
@@ -89,23 +89,23 @@ export const read = async (baseDir, storePath) => {
  */
 export const serialize = (graph, baseDir) => {
   const version = PKG_VERSION;
-  const graphEntries = [...graph].map(([src, dsts]) => ({
-    src: path.relative(baseDir, src),
-    dsts: [...dsts].map((dst) => path.relative(baseDir, dst)),
+  const graphEntries = [...graph].map(([file, refGroup]) => ({
+    file: path.relative(baseDir, file),
+    refGroup: [...refGroup].map((ref) => path.relative(baseDir, ref)),
   }));
   const files = sort(
     new Set([
-      ...graphEntries.map(({ src }) => src),
-      ...graphEntries.flatMap(({ dsts }) => dsts),
+      ...graphEntries.map(({ file }) => file),
+      ...graphEntries.flatMap(({ refGroup }) => refGroup),
     ]),
   );
   const fileMap = new Map(files.map((file, index) => [file, index]));
   const refs = sort(
-    graphEntries.map(({ src, dsts }) => [
-      /** @type {number} */ (fileMap.get(src)),
-      ...sort(dsts.map((dst) => /** @type {number} */ (fileMap.get(dst)))),
+    graphEntries.map(({ file, refGroup }) => [
+      /** @type {number} */ (fileMap.get(file)),
+      ...sort(refGroup.map((ref) => /** @type {number} */ (fileMap.get(ref)))),
     ]),
-    ([src]) => src,
+    ([file]) => file,
   );
   return { version, files, refs };
 };

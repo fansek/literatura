@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import drawGraph, {
+import drawDiagram, {
   CONT_AFTER_SRC,
   CONT_BEFORE_SRC,
   DST_AFTER_SRC,
@@ -10,37 +10,37 @@ import drawGraph, {
   SRC_MAX,
   SRC_MIN,
   VACUUM,
-} from './draw-graph.js';
+} from './draw-diagram.js';
 
 /**
  * @param {Iterable<[string, string[]]>} entries
  */
-const doRender = (entries) => {
+const doDraw = (entries) => {
   const mapping = new Map(entries);
-  return drawGraph([...mapping.keys()], (src) => mapping.get(src) ?? []);
+  return drawDiagram([...mapping.keys()], (src) => mapping.get(src) ?? []);
 };
 
-it('renders links', () => {
+it('draws diagram', () => {
   expect(
-    doRender([
+    doDraw([
       ['a', []],
       ['b', ['a']],
     ]),
   ).toEqual([DST_MIN, SRC_MAX]);
 });
 
-it('renders circular links', () => {
+it('draws diagram with circular refs', () => {
   expect(
-    doRender([
+    doDraw([
       ['a', ['b']],
       ['b', ['a']],
     ]),
   ).toEqual([DST_MIN + SRC_MIN, SRC_MAX + DST_MAX]);
 });
 
-it('renders links, complex scenario', () => {
+it('draws diagram, complex scenario', () => {
   expect(
-    doRender([
+    doDraw([
       ['a', []],
       ['b', ['a']],
       ['c', ['a', 'b', 'd', 'e']],
