@@ -2,10 +2,10 @@ import { expect, it } from 'vitest';
 import drawDiagram, {
   CONT_AFTER_SRC,
   CONT_BEFORE_SRC,
-  DST_AFTER_SRC,
-  DST_BEFORE_SRC,
-  DST_MAX,
-  DST_MIN,
+  REF_AFTER_SRC,
+  REF_BEFORE_SRC,
+  REF_MAX,
+  REF_MIN,
   SRC,
   SRC_MAX,
   SRC_MIN,
@@ -26,7 +26,7 @@ it('draws diagram', () => {
       ['a', []],
       ['b', ['a']],
     ]),
-  ).toEqual([DST_MIN, SRC_MAX]);
+  ).toEqual([REF_MIN, SRC_MAX]);
 });
 
 it('draws diagram with circular refs', () => {
@@ -35,7 +35,7 @@ it('draws diagram with circular refs', () => {
       ['a', ['b']],
       ['b', ['a']],
     ]),
-  ).toEqual([DST_MIN + SRC_MIN, SRC_MAX + DST_MAX]);
+  ).toEqual([REF_MIN + SRC_MIN, SRC_MAX + REF_MAX]);
 });
 
 it('draws diagram, complex scenario', () => {
@@ -49,11 +49,11 @@ it('draws diagram, complex scenario', () => {
       ['f', []],
     ]),
   ).toEqual([
-    VACUUM + DST_MIN + DST_MIN,
-    VACUUM + DST_BEFORE_SRC + SRC_MAX,
-    DST_MIN + SRC + DST_MIN,
-    CONT_BEFORE_SRC + DST_AFTER_SRC + SRC,
-    SRC_MAX + DST_MAX + CONT_AFTER_SRC,
-    VACUUM + VACUUM + DST_MAX,
+    VACUUM + REF_MIN + REF_MIN,
+    VACUUM + REF_BEFORE_SRC + SRC_MAX,
+    REF_MIN + SRC + REF_MIN,
+    CONT_BEFORE_SRC + REF_AFTER_SRC + SRC,
+    SRC_MAX + REF_MAX + CONT_AFTER_SRC,
+    VACUUM + VACUUM + REF_MAX,
   ]);
 });

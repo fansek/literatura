@@ -24,13 +24,13 @@ const renderPlain = (graph, baseDir) => {
 };
 
 /**
- * @param {string} src an edge source
- * @param {string} dst an edge destination
+ * @param {string} src a source
+ * @param {string} ref a node references by the source
  */
-const findLowestCommonAncestor = (src, dst) => {
+const findLowestCommonAncestor = (src, ref) => {
   const srcArr = src.split(path.sep);
-  const dstArr = dst.split(path.sep);
-  const i = srcArr.findIndex((value, index) => value !== dstArr[index]);
+  const refArr = ref.split(path.sep);
+  const i = srcArr.findIndex((value, index) => value !== refArr[index]);
   return (i === -1 ? srcArr : srcArr.slice(0, i)).join(path.sep) || path.sep;
 };
 
@@ -49,7 +49,10 @@ const getHighestComponent = (base, child) => {
  * @param {string} [format]
  */
 const renderNodes = (graph, format = DEFAULT_NODE_FORMAT) => {
-  const components = componentize(graph, (m) => m.keys());
+  const components = componentize(
+    graph.keys(),
+    (src) => graph.get(src)?.keys() ?? [],
+  );
   const links = renderLinks(
     components.map(({ src }) => src),
     (src) => graph.get(src)?.keys() ?? [],
@@ -66,10 +69,10 @@ const renderNodes = (graph, format = DEFAULT_NODE_FORMAT) => {
  * @param {string} [format]
  */
 const renderEdges = (graph, format = DEFAULT_EDGE_FORMAT) => {
-  sort([...graph], ([src]) => src).forEach(([src, dsts]) =>
-    sort(dsts, ([dst]) => dst).forEach(([dst, weight]) => {
+  sort([...graph], ([src]) => src).forEach(([src, refs]) =>
+    sort(refs, ([ref]) => ref).forEach(([ref, weight]) => {
       return process.stdout.write(
-        sprintf(format, { s: src, d: dst, w: weight }) + '\n',
+        sprintf(format, { s: src, d: ref, w: weight }) + '\n',
       );
     }),
   );
@@ -84,10 +87,10 @@ const renderEdges = (graph, format = DEFAULT_EDGE_FORMAT) => {
 const renderEntries = (graph, baseDir, entries, options) => {
   const resolvedEntries = entries.map((entry) => path.resolve(baseDir, entry));
   const entrySet = new Set(resolvedEntries);
-  const edges = [...graph].flatMap(([src, dsts]) =>
-    [...dsts].flatMap((dst) => {
-      const lca = findLowestCommonAncestor(src, dst);
-      return entrySet.has(lca) ? [{ src, dst, lca }] : [];
+  const edges = [...graph].flatMap(([src, refs]) =>
+    [...refs].flatMap((ref) => {
+      const lca = findLowestCommonAncestor(src, ref);
+      return entrySet.has(lca) ? [{ src, ref, lca }] : [];
     }),
   );
   const dirs = rollup(
@@ -98,8 +101,8 @@ const renderEntries = (graph, baseDir, entries, options) => {
         (edgesBySrc) =>
           rollup(
             edgesBySrc,
-            (edgesByDst) => edgesByDst.length,
-            ({ dst, lca }) => getHighestComponent(lca, dst),
+            (edgesByRef) => edgesByRef.length,
+            ({ ref, lca }) => getHighestComponent(lca, ref),
           ),
         ({ src, lca }) => getHighestComponent(lca, src),
       ),
