@@ -67,16 +67,15 @@ const drawColumn = (srcIndex, refIndices, indexRange, origColumn = []) => {
 };
 
 /**
- * @param {Iterable<string>} srcs sources
+ * @param {string[]} srcs sources
  * @param {(src: string) => Iterable<string>} getRefs get references by source
  */
 const drawDiagram = (srcs, getRefs) => {
-  const srcArr = [...srcs];
-  const indexBySrc = new Map(srcArr.map((src, index) => [src, index]));
+  const indexBySrc = new Map(srcs.map((src, index) => [src, index]));
   /** @type {string[][]} */
   const columns = [];
 
-  srcArr.forEach((src, index) => {
+  srcs.forEach((src, index) => {
     const refIndices = new Set(
       [...getRefs(src)]
         .map((ref) => indexBySrc.get(ref))
@@ -97,7 +96,7 @@ const drawDiagram = (srcs, getRefs) => {
     }
   });
 
-  return srcArr.map((_, index) =>
+  return srcs.map((_, index) =>
     columns
       .map((col) => col[index] ?? VACUUM)
       .reverse()

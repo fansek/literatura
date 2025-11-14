@@ -18,10 +18,16 @@ const sprintfToken = (value, alignSign, maxLength) => {
   return alignSign === '-' ? v.padStart(l) : v.padEnd(l);
 };
 
-const TOKEN = /%(?:%|t|n|(-)?(\d+)?(w|s|d|c|g))/g;
+const TOKEN = /%(?:%|t|n|(-)?(\d+)?(cni|diag|ref|src|weight))/g;
 
 /**
- * @typedef {'w' | 's' | 'd' | 'c' | 'g'} Key
+ * @typedef {|
+ *    'cni' |
+ *    'diag' |
+ *    'ref' |
+ *    'src' |
+ *    'weight'
+ * } Key
  * @param {string} format
  * @param {Partial<Record<Key, string | number>>} args
  */

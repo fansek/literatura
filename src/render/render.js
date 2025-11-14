@@ -2,10 +2,10 @@ import path from 'node:path';
 import { InternMap, rollup, sort } from 'd3-array';
 import { componentize } from './componentize.js';
 import sprintf from './format.js';
-import renderLinks from './draw-diagram.js';
+import drawDiagram from './draw-diagram.js';
 
-export const DEFAULT_NODE_FORMAT = '%g%c%t%s';
-export const DEFAULT_EDGE_FORMAT = '%-3w%t%s%t%d';
+export const DEFAULT_NODE_FORMAT = '%diag%t%src';
+export const DEFAULT_EDGE_FORMAT = '%-3weight%t%src%t%ref';
 
 /**
  * @param {Map<string, Set<string>>} graph
@@ -53,13 +53,13 @@ const renderNodes = (graph, format = DEFAULT_NODE_FORMAT) => {
     [...graph.keys()],
     (src) => graph.get(src)?.keys() ?? [],
   );
-  const links = renderLinks(
+  const diagram = drawDiagram(
     components.map(({ src }) => src),
     (src) => graph.get(src)?.keys() ?? [],
   );
   components.forEach(({ src, cni }, index) => {
     process.stdout.write(
-      sprintf(format, { s: src, c: cni, g: links[index] }) + '\n',
+      sprintf(format, { src, cni, diag: diagram[index] }) + '\n',
     );
   });
 };
@@ -71,9 +71,7 @@ const renderNodes = (graph, format = DEFAULT_NODE_FORMAT) => {
 const renderEdges = (graph, format = DEFAULT_EDGE_FORMAT) => {
   sort([...graph], ([src]) => src).forEach(([src, refs]) =>
     sort(refs, ([ref]) => ref).forEach(([ref, weight]) => {
-      return process.stdout.write(
-        sprintf(format, { s: src, d: ref, w: weight }) + '\n',
-      );
+      return process.stdout.write(sprintf(format, { src, ref, weight }) + '\n');
     }),
   );
 };
