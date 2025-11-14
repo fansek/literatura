@@ -14,14 +14,15 @@ const formatIndex = (arr, index, maxLength) =>
       );
 
 /**
- * @param {Iterable<string>} nodes
+ * @param {string[]} nodes
  * @param {(node: string) => Iterable<string>} getRefs
  */
 export const componentize = (nodes, getRefs) => {
+  const sortedNodes = sort(nodes);
   const graph = graphlib.json.read({
-    nodes: sort(nodes).map((v) => ({ v })),
-    edges: sort(nodes, ([m]) => m).flatMap(([name, m]) =>
-      sort(getRefs(m)).map((dep) => ({ v: name, w: dep })),
+    nodes: sortedNodes.map((v) => ({ v })),
+    edges: sortedNodes.flatMap((node) =>
+      sort(getRefs(node)).map((ref) => ({ v: node, w: ref })),
     ),
   });
   const cs = graphlib.alg

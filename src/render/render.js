@@ -50,7 +50,7 @@ const getHighestComponent = (base, child) => {
  */
 const renderNodes = (graph, format = DEFAULT_NODE_FORMAT) => {
   const components = componentize(
-    graph.keys(),
+    [...graph.keys()],
     (src) => graph.get(src)?.keys() ?? [],
   );
   const links = renderLinks(
