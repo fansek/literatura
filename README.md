@@ -1,6 +1,9 @@
 # literatura
 
-Literatura - a tool for reading large codebases.
+literatura - a tool for reading large codebases.
+
+It is useful mainly in large codebases to extract relationships between files
+and directories.
 
 ## Installing
 
@@ -10,9 +13,15 @@ To uninstall literatura, run `pnpm uninstall -g literatura`.
 
 ## Running
 
-Run `literatura **/*` to scan project for dependencies and build result markdown
-document. You can use alias `litera` instead of `literatura`.
+Run `lit -h` to learn how to use `literatura`.
+
+## Terminology
+
+`node` represents a file or a directory (depends on context).
+`edge` is a link from source (`src`) node to reference (`ref`) node.
 
 ## Acknowledgements
 
-literatura was inspired by `dpdm` for dependency list retrieval.
+literatura was inspired by
+
+- [dpdm](https://github.com/acrazing/dpdm) for dependency list retrieval.
