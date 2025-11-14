@@ -1,7 +1,7 @@
 {
   "name": "literatura",
   "version": "0.0.1",
-  "description": "Literatura - a tool for reading large codebases",
+  "description": "literatura - a tool for reading large codebases",
   "main": "./src/index.js",
   "exports": {
     ".": {
