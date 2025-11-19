@@ -22,8 +22,9 @@
   "license": "MIT",
   "repository": "git@github.com:fansek/literatura.git",
   "scripts": {
-    "build": "tsc -b",
-    "clean": "tsc -b --clean",
+    "preversion": "pnpm test",
+    "postversion": "pnpm publish",
+    "prepublishOnly": "git push origin --follow-tags",
     "test": "node --test"
   },
   "devDependencies": {
