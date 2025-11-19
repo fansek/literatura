@@ -1,9 +1,15 @@
 import { parseArgs } from 'node:util';
 import { DEFAULT_STORE_PATH } from '../store.js';
 import { DEFAULT_NODE_FORMAT, DEFAULT_EDGE_FORMAT } from '../render/render.js';
+import PKG_VERSION from '../version.js';
 
 const options = /** @type {const} */ ({
   help: { type: 'boolean', short: 'h', description: 'print this help message' },
+  version: {
+    type: 'boolean',
+    short: 'v',
+    description: 'print package version',
+  },
   build: { type: 'boolean', short: 'b', description: 'build literatura store' },
   store: {
     type: 'string',
@@ -93,6 +99,11 @@ const printUsage = (success) => {
   process.exit(success ? 0 : 1);
 };
 
+const printVersion = () => {
+  console.error(PKG_VERSION);
+  process.exit(0);
+};
+
 const BASE_DIR = process.cwd();
 
 /**
@@ -111,6 +122,9 @@ const parse = (args) => {
     });
     if (parsedArgs.values.help) {
       return printUsage(true);
+    }
+    if (parsedArgs.values.version) {
+      return printVersion();
     }
     if (parsedArgs.values.build) {
       return {

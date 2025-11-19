@@ -1,9 +1,7 @@
 import { sort } from 'd3-array';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import pkg from '../package.json' with { type: 'json' };
-
-const PKG_VERSION = pkg.version;
+import PKG_VERSION from './version.js';
 
 export const DEFAULT_STORE_PATH = '.literatura-store.json';
 

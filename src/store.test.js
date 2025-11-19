@@ -1,9 +1,9 @@
 import assert from 'node:assert';
 import { it } from 'node:test';
 import { deserialize, serialize } from './store.js';
-import pkg from '../package.json' with { type: 'json' };
+import PKG_VERSION from './version.js';
 
-const commonProps = { version: pkg.version };
+const commonProps = { version: PKG_VERSION };
 const baseDir = '/path';
 
 it('does not deserialize an invalid store', () => {
