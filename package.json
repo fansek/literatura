@@ -23,14 +23,13 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "test": "vitest --run"
+    "test": "node --test"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.5",
     "@types/d3-array": "^3.2.2",
     "@types/node": "^22.19.1",
-    "prettier": "^3.6.2",
-    "vitest": "^3.2.4"
+    "prettier": "^3.6.2"
   },
   "dependencies": {
     "@dagrejs/graphlib": "^2.2.4",
