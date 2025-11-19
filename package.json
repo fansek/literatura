@@ -2,17 +2,17 @@
   "name": "literatura",
   "version": "0.0.1",
   "description": "literatura - a tool for reading large codebases",
+  "keywords": [
+    "dependency",
+    "graph",
+    "static-analysis",
+    "hierarchical",
+    "circular",
+    "javascript",
+    "typescript",
+    "command-line"
+  ],
   "main": "./src/index.js",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.js"
-    },
-    "./*": {
-      "types": "./dist/*",
-      "default": "./src/*"
-    }
-  },
   "bin": {
     "literatura": "./src/cli/cli.js",
     "lit": "./src/cli/cli.js"
@@ -20,6 +20,7 @@
   "type": "module",
   "author": "František Grega",
   "license": "MIT",
+  "repository": "git@github.com:fansek/literatura.git",
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
