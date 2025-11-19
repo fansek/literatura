@@ -7,7 +7,8 @@ and directories.
 
 ## Installing
 
-To install literatura, run `pnpm link -g` from this directory.
+To install literatura, run `pnpm add -g literatura`. For development purposes,
+run `pnpm link -g` from the package directory.
 
 To uninstall literatura, run `pnpm uninstall -g literatura`.
 
