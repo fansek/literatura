@@ -16,6 +16,10 @@ To uninstall literatura, run `pnpm uninstall -g literatura`.
 
 Run `lit -h` to learn how to use `literatura`.
 
+## Versioning
+
+Use `pnpm version` command to publish the package with a new version.
+
 ## Terminology
 
 `node` represents a file or a directory (depends on context).
