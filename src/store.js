@@ -6,6 +6,12 @@ import PKG_VERSION from './version.js';
 export const DEFAULT_STORE_PATH = '.literatura-store.json';
 
 /**
+ * @typedef {{ isRuntime?: boolean }} Ref
+ * @typedef {{ refs: Map<string, Ref> }} Node
+ * @typedef {Map<string, Node>} Store
+ */
+
+/**
  * @param {string} baseDir a base dir path
  * @param {string} [storePath] a store path
  */
@@ -15,6 +21,7 @@ const resolveStorePath = (baseDir, storePath) =>
 /**
  * @param {unknown} storeObj
  * @param {string} baseDir a base dir path
+ * @returns {Store | undefined}
  */
 export const deserialize = (storeObj, baseDir) => {
   if (
@@ -22,17 +29,24 @@ export const deserialize = (storeObj, baseDir) => {
     typeof storeObj !== 'object' ||
     !('version' in storeObj) ||
     !('files' in storeObj) ||
-    !('refs' in storeObj)
+    !('refs' in storeObj) ||
+    !('runtimeRefs' in storeObj)
   ) {
     return undefined;
   }
-  const { version, files, refs } = storeObj;
+  const { version, files, refs, runtimeRefs } = storeObj;
   if (
     version !== PKG_VERSION ||
     !Array.isArray(files) ||
     !files.every((file) => typeof file === 'string') ||
     !Array.isArray(refs) ||
     !refs.every(
+      (refGroup) =>
+        Array.isArray(refGroup) &&
+        refGroup.every((ref) => typeof ref === 'number'),
+    ) ||
+    !Array.isArray(runtimeRefs) ||
+    !runtimeRefs.every(
       (refGroup) =>
         Array.isArray(refGroup) &&
         refGroup.every((ref) => typeof ref === 'number'),
@@ -45,17 +59,34 @@ export const deserialize = (storeObj, baseDir) => {
       (refGroup) =>
         refGroup.length >= 1 &&
         refGroup.every((ref) => ref >= 0 && ref < files.length),
+    ) ||
+    !runtimeRefs.every(
+      (refGroup) =>
+        refGroup.length >= 1 &&
+        refGroup.every((ref) => ref >= 0 && ref < files.length),
     )
   ) {
     return undefined;
   }
-  return new Map(
-    refs.map((refGroup) => [
+  const runtimeRefMap = new Map(
+    runtimeRefs.map((refGroup) => [
       path.resolve(baseDir, files[refGroup[0]]),
       new Set(
         refGroup.slice(1).map((ref) => path.resolve(baseDir, files[ref])),
       ),
     ]),
+  );
+  return new Map(
+    refs.map((refGroup) => {
+      const node = path.resolve(baseDir, files[refGroup[0]]);
+      const refs = new Map(
+        refGroup.slice(1).map((ref) => {
+          const r = path.resolve(baseDir, files[ref]);
+          return [r, { isRuntime: runtimeRefMap.get(node)?.has(r) ?? false }];
+        }),
+      );
+      return [node, { refs }];
+    }),
   );
 };
 
@@ -82,40 +113,58 @@ export const read = async (baseDir, storePath) => {
 };
 
 /**
- * @param {Map<string, Set<string>>} graph
+ * @param {Store} store
  * @param {string} baseDir a base dir path
  */
-export const serialize = (graph, baseDir) => {
+export const serialize = (store, baseDir) => {
   const version = PKG_VERSION;
-  const graphEntries = [...graph].map(([file, refGroup]) => ({
+  const storeEntries = [...store].map(([file, refGroup]) => ({
     file: path.relative(baseDir, file),
-    refGroup: [...refGroup].map((ref) => path.relative(baseDir, ref)),
+    refGroup: [...refGroup.refs].map(([ref, { isRuntime }]) => ({
+      name: path.relative(baseDir, ref),
+      isRuntime,
+    })),
   }));
   const files = sort(
     new Set([
-      ...graphEntries.map(({ file }) => file),
-      ...graphEntries.flatMap(({ refGroup }) => refGroup),
+      ...storeEntries.map(({ file }) => file),
+      ...storeEntries.flatMap(({ refGroup }) =>
+        refGroup.map(({ name }) => name),
+      ),
     ]),
   );
   const fileMap = new Map(files.map((file, index) => [file, index]));
   const refs = sort(
-    graphEntries.map(({ file, refGroup }) => [
+    storeEntries.map(({ file, refGroup }) => [
       /** @type {number} */ (fileMap.get(file)),
-      ...sort(refGroup.map((ref) => /** @type {number} */ (fileMap.get(ref)))),
+      ...sort(
+        refGroup.map(({ name }) => /** @type {number} */ (fileMap.get(name))),
+      ),
     ]),
     ([file]) => file,
   );
-  return { version, files, refs };
+  const runtimeRefs = sort(
+    storeEntries.map(({ file, refGroup }) => [
+      /** @type {number} */ (fileMap.get(file)),
+      ...sort(
+        refGroup
+          .filter(({ isRuntime }) => isRuntime)
+          .map(({ name }) => /** @type {number} */ (fileMap.get(name))),
+      ),
+    ]),
+    ([file]) => file,
+  );
+  return { version, files, refs, runtimeRefs };
 };
 
 /**
- * @param {Map<string, Set<string>>} graph
+ * @param {Store} store
  * @param {string} baseDir a base dir path
  * @param {string} [storePath]
  */
-export const write = async (graph, baseDir, storePath) => {
+export const write = async (store, baseDir, storePath) => {
   try {
-    const storeObj = serialize(graph, baseDir);
+    const storeObj = serialize(store, baseDir);
     const storeFileContent = JSON.stringify(storeObj);
     const resolvedStorePath = resolveStorePath(baseDir, storePath);
     await fs.writeFile(resolvedStorePath, storeFileContent, 'utf-8');

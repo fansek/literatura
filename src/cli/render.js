@@ -8,6 +8,7 @@ import { read } from '../store.js';
  *   storePath?: string;
  *   nodeFormat?: string;
  *   edgeFormat?: string;
+ *   runtimeOnly?: boolean;
  * }} RenderProps
  * @param {RenderProps} options
  */
@@ -17,6 +18,7 @@ const render = async ({
   storePath,
   nodeFormat,
   edgeFormat,
+  runtimeOnly,
 }) => {
   const storeReadResult = await read(baseDir, storePath);
   if (storeReadResult.status === 'rejected') {
@@ -25,6 +27,7 @@ const render = async ({
   doRender(storeReadResult.value, baseDir, entries, {
     nodeFormat,
     edgeFormat,
+    runtimeOnly,
   });
   return { status: /** @type {const} */ ('fulfilled') };
 };

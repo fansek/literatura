@@ -14,8 +14,8 @@ const build = async ({
   tsconfigSearchPath = process.cwd(),
   storePath,
 }) => {
-  const graph = await buildWithTs(tsconfigSearchPath);
-  return write(graph, baseDir, storePath);
+  const store = await buildWithTs(tsconfigSearchPath);
+  return write(store, baseDir, storePath);
 };
 
 export default build;

@@ -38,6 +38,10 @@ const options = /** @type {const} */ ({
     description: 'format edges with provided pattern',
     arg: 'pattern',
   },
+  runtimeOnly: {
+    type: 'boolean',
+    description: 'takes only runtime references into consideration',
+  },
 });
 
 const DESC_PADDING = 24;
@@ -48,7 +52,8 @@ const DESC_PADDING = 24;
 const formatHelpForOption = (option) => {
   const o = options[option];
   const arg = o.type === 'string' ? ` <${o.arg ?? 'argument'}>` : '';
-  const optionWithArg = `  -${o.short},--${option}${arg}`.padEnd(DESC_PADDING);
+  const short = 'short' in o ? `-${o.short},` : '';
+  const optionWithArg = `  ${short}--${option}${arg}`.padEnd(DESC_PADDING);
   const defaultInfo =
     'default' in o
       ? `\n${''.padEnd(DESC_PADDING)}[default: '${o.default}']`
@@ -142,6 +147,7 @@ const parse = (args) => {
       entries: parsedArgs.positionals,
       nodeFormat: parsedArgs.values.node,
       edgeFormat: parsedArgs.values.edge,
+      runtimeOnly: parsedArgs.values.runtimeOnly,
     };
   } catch {
     return printUsage();

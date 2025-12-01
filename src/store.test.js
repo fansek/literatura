@@ -28,7 +28,10 @@ it('does not deserialize an invalid store', () => {
 
 it('deserializes a valid empty store', () => {
   assert.deepEqual(
-    deserialize({ ...commonProps, files: [], refs: [] }, baseDir),
+    deserialize(
+      { ...commonProps, files: [], refs: [], runtimeRefs: [] },
+      baseDir,
+    ),
     new Map(),
   );
 });
@@ -43,30 +46,58 @@ it('deserializes a valid non-empty store', () => {
           [0, 1, 2],
           [1, 2],
         ],
+        runtimeRefs: [[0, 1], [1]],
       },
       baseDir,
     ),
     new Map([
-      ['/path/to/a.js', new Set(['/path/to/b.js', '/path/to/c.js'])],
-      ['/path/to/b.js', new Set(['/path/to/c.js'])],
+      [
+        '/path/to/a.js',
+        {
+          refs: new Map([
+            ['/path/to/b.js', { isRuntime: true }],
+            ['/path/to/c.js', { isRuntime: false }],
+          ]),
+        },
+      ],
+      [
+        '/path/to/b.js',
+        { refs: new Map([['/path/to/c.js', { isRuntime: false }]]) },
+      ],
     ]),
   );
 });
 
 it('deserializes what was serialized before', () => {
-  const graph = new Map([
-    ['/path/to/a.js', new Set(['/path/to/b.js', '/path/to/c.js'])],
-    ['/path/to/b.js', new Set([])],
+  const s = new Map([
+    [
+      '/path/to/a.js',
+      {
+        refs: new Map([
+          ['/path/to/b.js', { isRuntime: true }],
+          ['/path/to/c.js', { isRuntime: false }],
+        ]),
+      },
+    ],
+    ['/path/to/b.js', { refs: new Map() }],
   ]);
-  assert.deepEqual(deserialize(serialize(graph, baseDir), baseDir), graph);
+  assert.deepEqual(deserialize(serialize(s, baseDir), baseDir), s);
 });
 
 it('serializes a map into a store', () => {
   assert.deepEqual(
     serialize(
       new Map([
-        ['/path/to/a.js', new Set(['/path/to/b.js', '/path/to/c.js'])],
-        ['/path/to/b.js', new Set([])],
+        [
+          '/path/to/a.js',
+          {
+            refs: new Map([
+              ['/path/to/b.js', { isRuntime: true }],
+              ['/path/to/c.js', {}],
+            ]),
+          },
+        ],
+        ['/path/to/b.js', { refs: new Map() }],
       ]),
       baseDir,
     ),
@@ -74,6 +105,7 @@ it('serializes a map into a store', () => {
       ...commonProps,
       files: ['to/a.js', 'to/b.js', 'to/c.js'],
       refs: [[0, 1, 2], [1]],
+      runtimeRefs: [[0, 1], [1]],
     },
   );
 });

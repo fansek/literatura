@@ -8,17 +8,17 @@ export const DEFAULT_NODE_FORMAT = '%diag%t%-3deg%t%src';
 export const DEFAULT_EDGE_FORMAT = '%-3weight%t%src%t%ref';
 
 /**
- * @param {Map<string, Set<string>>} graph
+ * @param {import('../store.js').Store} store
  * @param {string} baseDir a base dir path
  */
-const renderPlain = (graph, baseDir) => {
-  sort(graph, ([k]) => k).forEach(([k, vs]) => {
-    if (vs.size === 0) {
+const renderPlain = (store, baseDir) => {
+  sort(store, ([k]) => k).forEach(([k, { refs }]) => {
+    if (refs.size === 0) {
       return;
     }
     const kFormatted = path.relative(baseDir, k);
-    sort(vs).forEach((v) =>
-      process.stdout.write(`${kFormatted}\t${path.relative(baseDir, v)}\n`),
+    sort(refs, ([ref]) => ref).forEach(([ref]) =>
+      process.stdout.write(`${kFormatted}\t${path.relative(baseDir, ref)}\n`),
     );
   });
 };
@@ -82,16 +82,24 @@ const renderEdges = (graph, format = DEFAULT_EDGE_FORMAT) => {
 };
 
 /**
- * @param {Map<string, Set<string>>} graph
+ * @param {import('../store.js').Store} store
  * @param {string} baseDir
  * @param {string[]} entries
- * @param {{ nodeFormat?: string; edgeFormat?: string }} options
+ * @param {{
+ *    nodeFormat?: string;
+ *    edgeFormat?: string;
+ *    runtimeOnly?: boolean
+ * }} options
  */
-const renderEntries = (graph, baseDir, entries, options) => {
+const renderEntries = (store, baseDir, entries, options) => {
   const resolvedEntries = entries.map((entry) => path.resolve(baseDir, entry));
   const entrySet = new Set(resolvedEntries);
-  const edges = [...graph].flatMap(([src, refs]) =>
-    [...refs].flatMap((ref) => {
+  const filter = options.runtimeOnly
+    ? (/** @type {[string, import('../store.js').Ref]} */ [, ref]) =>
+        ref.isRuntime
+    : (/** @type {[string, import('../store.js').Ref]} */ _) => true;
+  const edges = [...store].flatMap(([src, { refs }]) =>
+    [...refs].filter(filter).flatMap(([ref]) => {
       const lca = findLowestCommonAncestor(src, ref);
       return entrySet.has(lca) ? [{ src, ref, lca }] : [];
     }),
@@ -121,17 +129,21 @@ const renderEntries = (graph, baseDir, entries, options) => {
 };
 
 /**
- * @param {Map<string, Set<string>>} graph
+ * @param {import('../store.js').Store} store
  * @param {string} baseDir
  * @param {string[]} entries
- * @param {{ nodeFormat?: string; edgeFormat?: string }} options
+ * @param {{
+ *    nodeFormat?: string;
+ *    edgeFormat?: string;
+ *    runtimeOnly?: boolean
+ * }} options
  */
-const render = (graph, baseDir, entries, options) => {
+const render = (store, baseDir, entries, options) => {
   if (entries.length === 0) {
-    renderPlain(graph, baseDir);
+    renderPlain(store, baseDir);
     return;
   }
-  renderEntries(graph, baseDir, entries, options);
+  renderEntries(store, baseDir, entries, options);
 };
 
 export default render;
